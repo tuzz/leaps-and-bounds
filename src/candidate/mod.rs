@@ -22,6 +22,14 @@ impl Candidate {
         }
     }
 
+    fn expand(self, n: usize) -> impl Iterator<Item=Self> {
+        let last_symbol = *self.tail_of_string.last().unwrap();
+
+        (0..n)
+            .filter(move |&s| s != last_symbol)
+            .map(move |s| self.expand_one(s, n))
+    }
+
     fn expand_one(&self, symbol: usize, n: usize) -> Self {
         let tail_of_string = self.build_tail(symbol, n);
 

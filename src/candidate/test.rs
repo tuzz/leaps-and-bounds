@@ -28,6 +28,34 @@ mod seed {
     }
 }
 
+mod expand {
+    use super::*;
+
+    #[test]
+    fn it_expands_all_candidates_except_for_the_last_symbol_of_the_tail() {
+        let subject = Subject::seed(5);
+        let candidates: Vec<Subject> = subject.expand(5).collect();
+
+        assert_eq!(candidates.len(), 4);
+
+        assert_eq!(candidates[0].permutations_seen.len(), 2);
+        assert_eq!(candidates[0].tail_of_string, &[2, 3, 4, 0]);
+        assert_eq!(candidates[0].wasted_symbols, 0);
+
+        assert_eq!(candidates[1].permutations_seen.len(), 1);
+        assert_eq!(candidates[1].tail_of_string, &[2, 3, 4, 1]);
+        assert_eq!(candidates[1].wasted_symbols, 1);
+
+        assert_eq!(candidates[2].permutations_seen.len(), 1);
+        assert_eq!(candidates[2].tail_of_string, &[3, 4, 2]);
+        assert_eq!(candidates[2].wasted_symbols, 1);
+
+        assert_eq!(candidates[3].permutations_seen.len(), 1);
+        assert_eq!(candidates[3].tail_of_string, &[4, 3]);
+        assert_eq!(candidates[3].wasted_symbols, 1);
+    }
+}
+
 mod expand_one {
     use super::*;
 
