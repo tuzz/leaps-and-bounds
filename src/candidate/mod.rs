@@ -33,6 +33,10 @@ impl Candidate {
             return self.candidate_with_wasted_symbol(tail_of_string);
         }
 
+        if self.tail_starts_with(symbol) {
+            return self.candidate_with_wasted_symbol(tail_of_string);
+        }
+
         let id = self.permutation_id(symbol);
 
         if self.permutations_seen.contains(id) {
@@ -60,6 +64,10 @@ impl Candidate {
 
     fn less_than_full(tail_of_string: &Vec<usize>, n: usize) -> bool {
         tail_of_string.len() < n - 1
+    }
+
+    fn tail_starts_with(&self, symbol: usize) -> bool {
+        symbol == *self.tail_of_string.first().unwrap()
     }
 
     // TODO: update Lehmer crate to accept a slice or iterator of usize

@@ -107,7 +107,7 @@ mod expand_one {
         use super::*;
 
         #[test]
-        fn it() {
+        fn it_expands_candidates_correctly() {
             let n = 5;
 
             let subject = Subject::seed(n);
@@ -115,30 +115,30 @@ mod expand_one {
             assert_eq!(subject.tail_of_string, &[1, 2, 3, 4]);
             assert_eq!(subject.wasted_symbols, 0);
 
-            let depth_1 = subject.expand_one(0, n);
-            assert_eq!(depth_1.permutations_seen.len(), 2);
-            assert_eq!(depth_1.tail_of_string, &[2, 3, 4, 0]);
-            assert_eq!(depth_1.wasted_symbols, 0);
+            let depth_1 = subject.expand_one(1, n);
+            assert_eq!(depth_1.permutations_seen.len(), 1);
+            assert_eq!(depth_1.tail_of_string, &[2, 3, 4, 1]);
+            assert_eq!(depth_1.wasted_symbols, 1);
 
-            let depth_2 = depth_1.expand_one(1, n);
-            assert_eq!(depth_2.permutations_seen.len(), 3);
-            assert_eq!(depth_2.tail_of_string, &[3, 4, 0, 1]);
-            assert_eq!(depth_2.wasted_symbols, 0);
+            let depth_2 = depth_1.expand_one(0, n);
+            assert_eq!(depth_2.permutations_seen.len(), 2);
+            assert_eq!(depth_2.tail_of_string, &[3, 4, 1, 0]);
+            assert_eq!(depth_2.wasted_symbols, 1);
 
             let depth_3 = depth_2.expand_one(4, n);
-            assert_eq!(depth_3.permutations_seen.len(), 3);
-            assert_eq!(depth_3.tail_of_string, &[0, 1, 4]);
-            assert_eq!(depth_3.wasted_symbols, 1);
+            assert_eq!(depth_3.permutations_seen.len(), 2);
+            assert_eq!(depth_3.tail_of_string, &[1, 0, 4]);
+            assert_eq!(depth_3.wasted_symbols, 2);
 
             let depth_4 = depth_3.expand_one(3, n);
-            assert_eq!(depth_4.permutations_seen.len(), 3);
-            assert_eq!(depth_4.tail_of_string, &[0, 1, 4, 3]);
-            assert_eq!(depth_4.wasted_symbols, 2);
+            assert_eq!(depth_4.permutations_seen.len(), 2);
+            assert_eq!(depth_4.tail_of_string, &[1, 0, 4, 3]);
+            assert_eq!(depth_4.wasted_symbols, 3);
 
-            let depth_5 = depth_4.expand_one(0, n);
-            assert_eq!(depth_5.permutations_seen.len(), 4);
-            assert_eq!(depth_5.tail_of_string, &[1, 4, 3, 0]);
-            assert_eq!(depth_5.wasted_symbols, 2);
+            let depth_5 = depth_4.expand_one(2, n);
+            assert_eq!(depth_5.permutations_seen.len(), 3);
+            assert_eq!(depth_5.tail_of_string, &[0, 4, 3, 2]);
+            assert_eq!(depth_5.wasted_symbols, 3);
         }
     }
 }
