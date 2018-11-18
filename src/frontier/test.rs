@@ -1,6 +1,7 @@
 use super::*;
 
 type Subject = Frontier;
+const N: usize = 5;
 
 mod new {
     use super::*;
@@ -18,9 +19,9 @@ mod add {
     #[test]
     fn it_adds_a_candidate_to_the_frontier() {
         let mut subject = Subject::new();
-        let candidate = Candidate::seed(5);
+        let candidate = Candidate::seed(N);
 
-        subject.add(candidate, 5);
+        subject.add(candidate, N);
         assert_eq!(subject.len(), 1);
 
         let candidate = subject.next().unwrap();
@@ -32,16 +33,15 @@ mod add {
 
     #[test]
     fn it_queues_the_candidate_based_on_total_waste_and_number_of_permutations() {
-        let n = 5;
         let mut subject = Subject::new();
 
-        let seed = Candidate::seed(n);
-        let candidate = seed.expand(n).last().unwrap();
+        let seed = Candidate::seed(N);
+        let candidate = seed.expand(N).last().unwrap();
 
-        let total_waste = candidate.total_waste(n);
+        let total_waste = candidate.total_waste(N);
         let permutations = candidate.number_of_permutations();
 
-        subject.add(candidate, n);
+        subject.add(candidate, N);
         let mut queue = subject.priority_queue;
 
         assert_eq!(queue.min_priority(), Some(total_waste));
@@ -54,29 +54,27 @@ mod next {
 
     #[test]
     fn it_returns_the_candidates_ordered_by_waste_asc_then_number_of_permutations_desc() {
-        let n = 5;
-
         let mut subject = Subject::new();
-        let candidate = Candidate::seed(n);
+        let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(n) {
-            subject.add(c, n);
+        for c in candidate.expand(N) {
+            subject.add(c, N);
         }
 
         let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(n), 0);
+        assert_eq!(candidate.total_waste(N), 0);
         assert_eq!(candidate.number_of_permutations(), 2);
 
         let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(n), 1);
+        assert_eq!(candidate.total_waste(N), 1);
         assert_eq!(candidate.number_of_permutations(), 1);
 
         let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(n), 2);
+        assert_eq!(candidate.total_waste(N), 2);
         assert_eq!(candidate.number_of_permutations(), 1);
 
         let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(n), 3);
+        assert_eq!(candidate.total_waste(N), 3);
         assert_eq!(candidate.number_of_permutations(), 1);
 
         assert_eq!(subject.next(), None);
@@ -89,10 +87,10 @@ mod len {
     #[test]
     fn it_returns_how_many_candidates_there_are_in_total() {
         let mut subject = Subject::new();
-        let candidate = Candidate::seed(5);
+        let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(5) {
-            subject.add(c, 5);
+        for c in candidate.expand(N) {
+            subject.add(c, N);
         }
 
         assert_eq!(subject.len(), 4);
@@ -105,10 +103,10 @@ mod len_for_waste {
     #[test]
     fn it_returns_how_many_candidates_there_are_for_the_given_number_of_wasted_symbols() {
         let mut subject = Subject::new();
-        let candidate = Candidate::seed(5);
+        let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(5) {
-            subject.add(c, 5);
+        for c in candidate.expand(N) {
+            subject.add(c, N);
         }
 
         assert_eq!(subject.len_for_waste(0), 1);
@@ -126,10 +124,10 @@ mod min_waste {
     #[test]
     fn it_returns_the_minimum_number_of_wasted_symbols_for_candidates_in_the_frontier() {
         let mut subject = Subject::new();
-        let candidate = Candidate::seed(5);
+        let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(5) {
-            subject.add(c, 5);
+        for c in candidate.expand(N) {
+            subject.add(c, N);
         }
 
         assert_eq!(subject.min_waste(), Some(0));
@@ -148,10 +146,10 @@ mod max_waste {
     #[test]
     fn it_returns_the_maximum_number_of_wasted_symbols_for_candidates_in_the_frontier() {
         let mut subject = Subject::new();
-        let candidate = Candidate::seed(5);
+        let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(5) {
-            subject.add(c, 5);
+        for c in candidate.expand(N) {
+            subject.add(c, N);
         }
 
         assert_eq!(subject.max_waste(), Some(3));

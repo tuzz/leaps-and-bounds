@@ -1,13 +1,14 @@
 use super::*;
 
 type Subject = Candidate;
+const N: usize = 5;
 
 mod seed {
     use super::*;
 
     #[test]
     fn it_has_seen_the_first_permutation() {
-        let subject = Subject::seed(5);
+        let subject = Subject::seed(N);
 
         assert_eq!(subject.permutations_seen.contains(0), true);
         assert_eq!(subject.permutations_seen.contains(1), false);
@@ -15,14 +16,14 @@ mod seed {
 
     #[test]
     fn it_contains_the_tail_of_the_01234_permutation() {
-        let subject = Subject::seed(5);
+        let subject = Subject::seed(N);
 
         assert_eq!(subject.tail_of_string, &[1, 2, 3, 4]);
     }
 
     #[test]
     fn it_sets_wasted_symbols_to_zero() {
-        let subject = Subject::seed(5);
+        let subject = Subject::seed(N);
 
         assert_eq!(subject.wasted_symbols, 0);
     }
@@ -33,8 +34,8 @@ mod expand {
 
     #[test]
     fn it_expands_all_candidates_except_for_the_last_symbol_of_the_tail() {
-        let subject = Subject::seed(5);
-        let candidates: Vec<Subject> = subject.expand(5).collect();
+        let subject = Subject::seed(N);
+        let candidates: Vec<Subject> = subject.expand(N).collect();
 
         assert_eq!(candidates.len(), 4);
 
@@ -64,8 +65,8 @@ mod expand_one {
 
         #[test]
         fn it_has_seen_the_new_permutation() {
-            let subject = Subject::seed(5);
-            let candidate = subject.expand_one(0, 5);
+            let subject = Subject::seed(N);
+            let candidate = subject.expand_one(0, N);
 
             let lehmer = Lehmer::from_permutation(vec![1, 2, 3, 4, 0]);
             let decimal = lehmer.to_decimal() as usize;
@@ -76,16 +77,16 @@ mod expand_one {
 
         #[test]
         fn it_builds_a_tail_from_the_end_of_the_permutation() {
-            let subject = Subject::seed(5);
-            let candidate = subject.expand_one(0, 5);
+            let subject = Subject::seed(N);
+            let candidate = subject.expand_one(0, N);
 
             assert_eq!(candidate.tail_of_string, &[2, 3, 4, 0]);
         }
 
         #[test]
         fn it_has_no_additional_wasted_symbols() {
-            let subject = Subject::seed(5);
-            let candidate = subject.expand_one(0, 5);
+            let subject = Subject::seed(N);
+            let candidate = subject.expand_one(0, N);
 
             assert_eq!(candidate.wasted_symbols, 0);
         }
@@ -96,37 +97,37 @@ mod expand_one {
 
         #[test]
         fn it_has_not_seen_any_new_permutations() {
-            let subject = Subject::seed(5);
-            let candidate = subject.expand_one(3, 5);
+            let subject = Subject::seed(N);
+            let candidate = subject.expand_one(3, N);
 
             assert_eq!(candidate.permutations_seen.len(), 1);
         }
 
         #[test]
         fn it_builds_a_tail_after_the_repeated_symbol_in_the_previous_tail() {
-            let subject = Subject::seed(5);
+            let subject = Subject::seed(N);
 
-            let candidate = subject.expand_one(1, 5);
+            let candidate = subject.expand_one(1, N);
             assert_eq!(candidate.tail_of_string, &[2, 3, 4, 1]);
 
-            let candidate = subject.expand_one(2, 5);
+            let candidate = subject.expand_one(2, N);
             assert_eq!(candidate.tail_of_string, &[3, 4, 2]);
 
-            let candidate = subject.expand_one(3, 5);
+            let candidate = subject.expand_one(3, N);
             assert_eq!(candidate.tail_of_string, &[4, 3]);
 
-            let candidate = subject.expand_one(4, 5);
+            let candidate = subject.expand_one(4, N);
             assert_eq!(candidate.tail_of_string, &[4]);
         }
 
         #[test]
         fn it_has_one_additional_wasted_symbol() {
-            let subject = Subject::seed(5);
+            let subject = Subject::seed(N);
 
-            let candidate = subject.expand_one(3, 5);
+            let candidate = subject.expand_one(3, N);
             assert_eq!(candidate.wasted_symbols, 1);
 
-            let candidate = candidate.expand_one(3, 5);
+            let candidate = candidate.expand_one(3, N);
             assert_eq!(candidate.wasted_symbols, 2);
         }
     }
@@ -136,34 +137,32 @@ mod expand_one {
 
         #[test]
         fn it_expands_candidates_correctly() {
-            let n = 5;
-
-            let subject = Subject::seed(n);
+            let subject = Subject::seed(N);
             assert_eq!(subject.permutations_seen.len(), 1);
             assert_eq!(subject.tail_of_string, &[1, 2, 3, 4]);
             assert_eq!(subject.wasted_symbols, 0);
 
-            let depth_1 = subject.expand_one(1, n);
+            let depth_1 = subject.expand_one(1, N);
             assert_eq!(depth_1.permutations_seen.len(), 1);
             assert_eq!(depth_1.tail_of_string, &[2, 3, 4, 1]);
             assert_eq!(depth_1.wasted_symbols, 1);
 
-            let depth_2 = depth_1.expand_one(0, n);
+            let depth_2 = depth_1.expand_one(0, N);
             assert_eq!(depth_2.permutations_seen.len(), 2);
             assert_eq!(depth_2.tail_of_string, &[3, 4, 1, 0]);
             assert_eq!(depth_2.wasted_symbols, 1);
 
-            let depth_3 = depth_2.expand_one(4, n);
+            let depth_3 = depth_2.expand_one(4, N);
             assert_eq!(depth_3.permutations_seen.len(), 2);
             assert_eq!(depth_3.tail_of_string, &[1, 0, 4]);
             assert_eq!(depth_3.wasted_symbols, 2);
 
-            let depth_4 = depth_3.expand_one(3, n);
+            let depth_4 = depth_3.expand_one(3, N);
             assert_eq!(depth_4.permutations_seen.len(), 2);
             assert_eq!(depth_4.tail_of_string, &[1, 0, 4, 3]);
             assert_eq!(depth_4.wasted_symbols, 3);
 
-            let depth_5 = depth_4.expand_one(2, n);
+            let depth_5 = depth_4.expand_one(2, N);
             assert_eq!(depth_5.permutations_seen.len(), 3);
             assert_eq!(depth_5.tail_of_string, &[0, 4, 3, 2]);
             assert_eq!(depth_5.wasted_symbols, 3);
@@ -176,22 +175,20 @@ mod future_waste {
 
     #[test]
     fn it_returns_how_many_additional_symbols_will_be_wasted_before_we_can_see_a_new_permutation() {
-        let n = 5;
-
-        let subject = Subject::seed(n);             //     01234
-        assert_eq!(subject.future_waste(n), 0);     //       |
+        let subject = Subject::seed(N);             //     01234
+        assert_eq!(subject.future_waste(N), 0);     //       |
                                                     //       v
-        let depth_1 = subject.expand_one(3, n);     //    012343ww   (2 wasted)
-        assert_eq!(depth_1.future_waste(n), 2);     //       |
+        let depth_1 = subject.expand_one(3, N);     //    012343ww   (2 wasted)
+        assert_eq!(depth_1.future_waste(N), 2);     //       |
                                                     //       v
-        let depth_2 = depth_1.expand_one(0, n);     //    0123430w
-        assert_eq!(depth_2.future_waste(n), 1);     //       |
+        let depth_2 = depth_1.expand_one(0, N);     //    0123430w
+        assert_eq!(depth_2.future_waste(N), 1);     //       |
                                                     //       v
-        let depth_3 = depth_2.expand_one(1, n);     //    01234301
-        assert_eq!(depth_3.future_waste(n), 0);     //       |
+        let depth_3 = depth_2.expand_one(1, N);     //    01234301
+        assert_eq!(depth_3.future_waste(N), 0);     //       |
                                                     //       v
-        let depth_4 = depth_3.expand_one(1, n);     //  012343011www
-        assert_eq!(depth_4.future_waste(n), 3);
+        let depth_4 = depth_3.expand_one(1, N);     //  012343011www
+        assert_eq!(depth_4.future_waste(N), 3);
     }
 }
 
@@ -200,21 +197,19 @@ mod total_waste {
 
     #[test]
     fn it_returns_the_total_number_of_wasted_symbols_there_will_be_before_we_see_a_new_permutation() {
-        let n = 5;
-
-        let subject = Subject::seed(n);             //     01234
-        assert_eq!(subject.total_waste(n), 0);      //       |
+        let subject = Subject::seed(N);             //     01234
+        assert_eq!(subject.total_waste(N), 0);      //       |
                                                     //       v
-        let depth_1 = subject.expand_one(3, n);     //    01234[3ww]   (3 wasted in total)
-        assert_eq!(depth_1.total_waste(n), 3);      //       |
+        let depth_1 = subject.expand_one(3, N);     //    01234[3ww]   (3 wasted in total)
+        assert_eq!(depth_1.total_waste(N), 3);      //       |
                                                     //       v
-        let depth_2 = depth_1.expand_one(0, n);     //    01234[30w]
-        assert_eq!(depth_2.total_waste(n), 3);      //       |
+        let depth_2 = depth_1.expand_one(0, N);     //    01234[30w]
+        assert_eq!(depth_2.total_waste(N), 3);      //       |
                                                     //       v
-        let depth_3 = depth_2.expand_one(1, n);     //    01234[301]
-        assert_eq!(depth_3.total_waste(n), 3);      //       |
+        let depth_3 = depth_2.expand_one(1, N);     //    01234[301]
+        assert_eq!(depth_3.total_waste(N), 3);      //       |
                                                     //       v
-        let depth_4 = depth_3.expand_one(1, n);     //  01234[3011www]
-        assert_eq!(depth_4.total_waste(n), 7);
+        let depth_4 = depth_3.expand_one(1, N);     //  01234[3011www]
+        assert_eq!(depth_4.total_waste(N), 7);
     }
 }
