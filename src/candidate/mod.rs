@@ -1,15 +1,17 @@
-use super::*;
+use bit_set::BitSet;
+use lehmer::Lehmer;
 
 use std::iter::once;
 
-struct Candidate {
-    permutations_seen: BitSet,
-    tail_of_string: Vec<usize>,
-    wasted_symbols: usize,
+#[derive(Debug, PartialEq)]
+pub struct Candidate {
+    pub permutations_seen: BitSet,
+    pub tail_of_string: Vec<usize>,
+    pub wasted_symbols: usize,
 }
 
 impl Candidate {
-    fn seed(n: usize) -> Self {
+    pub fn seed(n: usize) -> Self {
         let max_value = Lehmer::max_value(n) as usize;
         let mut seen = BitSet::with_capacity(max_value);
 
@@ -22,7 +24,7 @@ impl Candidate {
         }
     }
 
-    fn expand(self, n: usize) -> impl Iterator<Item=Self> {
+    pub fn expand(self, n: usize) -> impl Iterator<Item=Self> {
         let last_symbol = *self.tail_of_string.last().unwrap();
 
         (0..n)
@@ -30,11 +32,15 @@ impl Candidate {
             .map(move |s| self.expand_one(s, n))
     }
 
-    fn future_waste(&self, n: usize) -> usize {
+    pub fn number_of_permutations(&self) -> usize {
+        self.permutations_seen.len()
+    }
+
+    pub fn future_waste(&self, n: usize) -> usize {
         n - self.tail_of_string.len() - 1
     }
 
-    fn total_waste(&self, n: usize) -> usize {
+    pub fn total_waste(&self, n: usize) -> usize {
         self.wasted_symbols + self.future_waste(n)
     }
 
