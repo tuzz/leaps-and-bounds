@@ -30,6 +30,14 @@ impl Candidate {
             .map(move |s| self.expand_one(s, n))
     }
 
+    fn future_waste(&self, n: usize) -> usize {
+        n - self.tail_of_string.len() - 1
+    }
+
+    fn total_waste(&self, n: usize) -> usize {
+        self.wasted_symbols + self.future_waste(n)
+    }
+
     fn expand_one(&self, symbol: usize, n: usize) -> Self {
         let tail_of_string = self.build_tail(symbol, n);
 

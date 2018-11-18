@@ -170,3 +170,51 @@ mod expand_one {
         }
     }
 }
+
+mod future_waste {
+    use super::*;
+
+    #[test]
+    fn it_returns_how_many_additional_symbols_will_be_wasted_before_we_can_see_a_new_permutation() {
+        let n = 5;
+
+        let subject = Subject::seed(n);             //     01234
+        assert_eq!(subject.future_waste(n), 0);     //       |
+                                                    //       v
+        let depth_1 = subject.expand_one(3, n);     //    012343ww   (2 wasted)
+        assert_eq!(depth_1.future_waste(n), 2);     //       |
+                                                    //       v
+        let depth_2 = depth_1.expand_one(0, n);     //    0123430w
+        assert_eq!(depth_2.future_waste(n), 1);     //       |
+                                                    //       v
+        let depth_3 = depth_2.expand_one(1, n);     //    01234301
+        assert_eq!(depth_3.future_waste(n), 0);     //       |
+                                                    //       v
+        let depth_4 = depth_3.expand_one(1, n);     //  012343011www
+        assert_eq!(depth_4.future_waste(n), 3);
+    }
+}
+
+mod total_waste {
+    use super::*;
+
+    #[test]
+    fn it_returns_the_total_number_of_wasted_symbols_there_will_be_before_we_see_a_new_permutation() {
+        let n = 5;
+
+        let subject = Subject::seed(n);             //     01234
+        assert_eq!(subject.total_waste(n), 0);      //       |
+                                                    //       v
+        let depth_1 = subject.expand_one(3, n);     //    01234[3ww]   (3 wasted in total)
+        assert_eq!(depth_1.total_waste(n), 3);      //       |
+                                                    //       v
+        let depth_2 = depth_1.expand_one(0, n);     //    01234[30w]
+        assert_eq!(depth_2.total_waste(n), 3);      //       |
+                                                    //       v
+        let depth_3 = depth_2.expand_one(1, n);     //    01234[301]
+        assert_eq!(depth_3.total_waste(n), 3);      //       |
+                                                    //       v
+        let depth_4 = depth_3.expand_one(1, n);     //  01234[3011www]
+        assert_eq!(depth_4.total_waste(n), 7);
+    }
+}
