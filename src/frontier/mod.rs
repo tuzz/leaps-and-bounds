@@ -3,18 +3,18 @@ use super::candidate::Candidate;
 use ::bucket_queue::*;
 use std::collections::VecDeque;
 
-struct Frontier {
+pub struct Frontier {
     priority_queue: BucketQueue<BucketQueue<VecDeque<Candidate>>>,
 }
 
 impl Frontier {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let queue = BucketQueue::<BucketQueue<VecDeque<Candidate>>>::new();
 
         Frontier { priority_queue: queue }
     }
 
-    fn add(&mut self, candidate: Candidate, n: usize) {
+    pub fn add(&mut self, candidate: Candidate, n: usize) {
         let permutations = candidate.permutations_seen.len();
 
         self.priority_queue
@@ -22,14 +22,14 @@ impl Frontier {
             .enqueue(candidate, permutations);
     }
 
-    fn next(&mut self) -> Option<Candidate> {
+    pub fn next(&mut self) -> Option<Candidate> {
         let waste = self.min_waste()?;
         let bucket = self.priority_queue.bucket_for_removing(waste)?;
 
         bucket.dequeue_max()
     }
 
-    fn prune(&mut self, wasted_symbols: usize, threshold: usize, eager: bool) -> Option<()> {
+    pub fn prune(&mut self, wasted_symbols: usize, threshold: usize, eager: bool) -> Option<()> {
         let max = match eager {
             true => self.max_waste()?,
             false => wasted_symbols,
@@ -42,7 +42,7 @@ impl Frontier {
         None
     }
 
-    fn prune_one(&mut self, wasted_symbols: usize, threshold: usize) -> Option<()> {
+    pub fn prune_one(&mut self, wasted_symbols: usize, threshold: usize) -> Option<()> {
         let mut bucket = self.priority_queue.bucket(wasted_symbols);
         let min = bucket.min_priority()?;
 
@@ -53,20 +53,20 @@ impl Frontier {
         None
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.priority_queue.len()
     }
 
-    fn len_for_waste(&self, wasted_symbols: usize) -> usize {
+    pub fn len_for_waste(&self, wasted_symbols: usize) -> usize {
         let bucket = self.priority_queue.bucket_for_peeking(wasted_symbols);
         bucket.map_or(0, |b| b.len())
     }
 
-    fn min_waste(&self) -> Option<usize> {
+    pub fn min_waste(&self) -> Option<usize> {
         self.priority_queue.min_priority()
     }
 
-    fn max_waste(&self) -> Option<usize> {
+    pub fn max_waste(&self) -> Option<usize> {
         self.priority_queue.max_priority()
     }
 }
