@@ -1,21 +1,22 @@
 use super::*;
 
 type Subject = Bounds;
+const N: usize = 5;
 
 mod new {
     use super::*;
 
     #[test]
-    fn it_sets_the_first_lower_bound_to_zero_and_upper_bound_to_max() {
-        let subject = Subject::new();
+    fn it_sets_the_first_lower_bound_to_zero_and_upper_bound_to_factorial_of_n() {
+        let subject = Subject::new(N);
 
         assert_eq!(subject.lower_bounds, &[0]);
-        assert_eq!(subject.upper_bounds, &[MAX]);
+        assert_eq!(subject.upper_bounds, &[120]);
     }
 
     #[test]
     fn it_sets_the_first_threshold_to_zero() {
-        let subject = Subject::new();
+        let subject = Subject::new(N);
 
         assert_eq!(subject.thresholds, &[0]);
     }
@@ -26,7 +27,7 @@ mod update {
 
     #[test]
     fn it_increases_the_lower_bound_for_the_given_index() {
-        let mut subject = Subject::new();
+        let mut subject = Subject::new(N);
 
         subject.update(0, 1);
         assert_eq!(subject.lower_bounds, &[1]);
@@ -37,7 +38,7 @@ mod update {
 
     #[test]
     fn it_returns_true_if_the_bounds_updated() {
-        let mut subject = Subject::new();
+        let mut subject = Subject::new(N);
 
         assert_eq!(subject.update(0, 0), false);
         assert_eq!(subject.update(0, 1), true);
@@ -51,7 +52,7 @@ mod update {
 
         #[test]
         fn it_increases_the_length_of_the_array() {
-            let mut subject = Subject::new();
+            let mut subject = Subject::new(N);
 
             subject.update(1, 0);
             assert_eq!(subject.lower_bounds, &[0, 0]);
@@ -62,7 +63,7 @@ mod update {
 
         #[test]
         fn it_sets_the_lower_bound() {
-            let mut subject = Subject::new();
+            let mut subject = Subject::new(N);
 
             subject.update(1, 5);
             assert_eq!(subject.lower_bounds, &[0, 5]);
@@ -73,7 +74,7 @@ mod update {
 
         #[test]
         fn it_reuses_the_previous_lower_bound_if_it_is_larger() {
-            let mut subject = Subject::new();
+            let mut subject = Subject::new(N);
 
             subject.update(0, 5);
             assert_eq!(subject.lower_bounds, &[5]);
@@ -90,7 +91,7 @@ mod update {
 
         #[test]
         fn it_returns_true() {
-            let mut subject = Subject::new();
+            let mut subject = Subject::new(N);
 
             subject.update(0, 5);
 
@@ -100,10 +101,10 @@ mod update {
 
         #[test]
         fn it_fixes_the_upper_bound_for_the_previous_indexes() {
-            let mut subject = Subject::new();
+            let mut subject = Subject::new(N);
 
             subject.update(0, 5);
-            assert_eq!(subject.upper_bounds[0], MAX);
+            assert_eq!(subject.upper_bounds[0], 120);
 
             subject.update(1, 3);
             assert_eq!(subject.upper_bounds[0], 5);
@@ -114,11 +115,11 @@ mod update {
 
         #[test]
         fn it_sets_the_upper_bound_to_its_lower_bound_plus_the_first_upper_bound() {
-            let mut subject = Subject::new();
+            let mut subject = Subject::new(N);
 
             subject.update(0, 5);
             assert_eq!(subject.lower_bounds, &[5]);
-            assert_eq!(subject.upper_bounds, &[MAX]);
+            assert_eq!(subject.upper_bounds, &[120]);
 
             subject.update(1, 3);
             assert_eq!(subject.lower_bounds, &[5, 5]);
@@ -131,7 +132,7 @@ mod update {
 
         #[test]
         fn it_sets_the_threshold_to_the_lower_bound_minus_first_upper_bound() {
-            let mut subject = Subject::new();
+            let mut subject = Subject::new(N);
 
             subject.update(0, 5);
             assert_eq!(subject.thresholds, &[0]);
@@ -155,7 +156,7 @@ mod upper {
 
     #[test]
     fn it_returns_the_upper_bound_for_the_index_or_max() {
-        let mut subject = Subject::new();
+        let mut subject = Subject::new(N);
 
         subject.update(0, 5);
         subject.update(2, 5);
@@ -165,6 +166,22 @@ mod upper {
         assert_eq!(subject.upper(0), 5);
         assert_eq!(subject.upper(1), 5);
         assert_eq!(subject.upper(2), 10);
-        assert_eq!(subject.upper(3), MAX);
+        assert_eq!(subject.upper(3), 120);
+    }
+}
+
+mod found_for_superpermutation {
+    use super::*;
+
+    #[test]
+    fn it_returns_true_if_the_last_lower_bound_is_equal_to_factorial_n() {
+        let mut subject = Subject::new(N);
+        assert_eq!(subject.found_for_superpermutation(), false);
+
+        subject.update(0, 119);
+        assert_eq!(subject.found_for_superpermutation(), false);
+
+        subject.update(0, 120);
+        assert_eq!(subject.found_for_superpermutation(), true);
     }
 }

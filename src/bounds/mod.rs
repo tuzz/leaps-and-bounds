@@ -1,19 +1,26 @@
 use std::cmp::max;
-use std::usize::MAX;
 
 #[derive(Debug)]
-struct Bounds {
-    lower_bounds: Vec<usize>,
-    upper_bounds: Vec<usize>,
-    thresholds: Vec<usize>,
+pub struct Bounds {
+    pub lower_bounds: Vec<usize>,
+    pub upper_bounds: Vec<usize>,
+    pub thresholds: Vec<usize>,
+    pub max: usize,
 }
 
 impl Bounds {
-    fn new() -> Self {
-        Self { lower_bounds: vec![0], upper_bounds: vec![MAX], thresholds: vec![0] }
+    pub fn new(n: usize) -> Self {
+        let factorial = Self::factorial(n);
+
+        Self {
+            lower_bounds: vec![0],
+            upper_bounds: vec![factorial],
+            thresholds: vec![0],
+            max: factorial,
+        }
     }
 
-    fn update(&mut self, index: usize, bound: usize) -> bool {
+    pub fn update(&mut self, index: usize, bound: usize) -> bool {
         if self.lower_bounds.len() <= index {
             self.add_new_index(index, bound);
             return true;
@@ -28,7 +35,11 @@ impl Bounds {
     }
 
     pub fn upper(&self, wasted_symbols: usize) -> usize {
-        *self.upper_bounds.get(wasted_symbols).unwrap_or(&MAX)
+        *self.upper_bounds.get(wasted_symbols).unwrap_or(&self.max)
+    }
+
+    pub fn found_for_superpermutation(&self) -> bool {
+        *self.lower_bounds.last().unwrap() == self.max
     }
 
     fn add_new_index(&mut self, index: usize, bound: usize) {
@@ -36,7 +47,7 @@ impl Bounds {
         let last_bound = *self.lower_bounds.last().unwrap();
 
         self.lower_bounds.resize(index + 1, 0);
-        self.upper_bounds.resize(index + 1, MAX);
+        self.upper_bounds.resize(index + 1, self.max);
         self.thresholds.resize(index + 1, 0);
 
         for i in previous_len..=index {
@@ -61,6 +72,13 @@ impl Bounds {
 
     fn decrease_upper_bound(&mut self, index: usize) {
         self.upper_bounds[index] = self.lower_bounds[index] + self.upper_bounds[0];
+    }
+
+    fn factorial(n: usize) -> usize {
+        match n {
+            0 => 1,
+            _ => n * Self::factorial(n - 1),
+        }
     }
 }
 
