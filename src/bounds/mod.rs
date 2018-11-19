@@ -27,6 +27,10 @@ impl Bounds {
         false
     }
 
+    pub fn upper(&self, wasted_symbols: usize) -> usize {
+        *self.upper_bounds.get(wasted_symbols).unwrap_or(&MAX)
+    }
+
     fn add_new_index(&mut self, index: usize, bound: usize) {
         let previous_len = self.lower_bounds.len();
         let last_bound = *self.lower_bounds.last().unwrap();

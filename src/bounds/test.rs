@@ -149,3 +149,22 @@ mod update {
         }
     }
 }
+
+mod upper {
+    use super::*;
+
+    #[test]
+    fn it_returns_the_upper_bound_for_the_index_or_max() {
+        let mut subject = Subject::new();
+
+        subject.update(0, 5);
+        subject.update(2, 5);
+
+        assert_eq!(subject.upper_bounds, &[5, 5, 10]);
+
+        assert_eq!(subject.upper(0), 5);
+        assert_eq!(subject.upper(1), 5);
+        assert_eq!(subject.upper(2), 10);
+        assert_eq!(subject.upper(3), MAX);
+    }
+}
