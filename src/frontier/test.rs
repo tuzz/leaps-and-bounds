@@ -1,4 +1,5 @@
 use super::*;
+use std::usize::MAX;
 
 type Subject = Frontier;
 const N: usize = 5;
@@ -36,7 +37,7 @@ mod add {
         let mut subject = Subject::new();
 
         let seed = Candidate::seed(N);
-        let candidate = seed.expand(N).last().unwrap();
+        let candidate = seed.expand(MAX, N).last().unwrap();
 
         let total_waste = candidate.total_waste(N);
         let permutations = candidate.number_of_permutations();
@@ -57,7 +58,7 @@ mod next {
         let mut subject = Subject::new();
         let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(N) {
+        for c in candidate.expand(MAX, N) {
             subject.add(c, N);
         }
 
@@ -89,7 +90,7 @@ mod len {
         let mut subject = Subject::new();
         let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(N) {
+        for c in candidate.expand(MAX, N) {
             subject.add(c, N);
         }
 
@@ -105,7 +106,7 @@ mod len_for_waste {
         let mut subject = Subject::new();
         let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(N) {
+        for c in candidate.expand(MAX, N) {
             subject.add(c, N);
         }
 
@@ -126,7 +127,7 @@ mod min_waste {
         let mut subject = Subject::new();
         let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(N) {
+        for c in candidate.expand(MAX, N) {
             subject.add(c, N);
         }
 
@@ -148,7 +149,7 @@ mod max_waste {
         let mut subject = Subject::new();
         let candidate = Candidate::seed(N);
 
-        for c in candidate.expand(N) {
+        for c in candidate.expand(MAX, N) {
             subject.add(c, N);
         }
 

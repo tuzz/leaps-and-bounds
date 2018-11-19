@@ -24,12 +24,13 @@ impl Candidate {
         }
     }
 
-    pub fn expand(self, n: usize) -> impl Iterator<Item=Self> {
+    pub fn expand(self, upper_bound: usize, n: usize) -> impl Iterator<Item=Self> {
         let last_symbol = *self.tail_of_string.last().unwrap();
+        let at_upper_bound = self.number_of_permutations() == upper_bound;
 
         (0..n)
             .filter(move |&s| s != last_symbol)
-            .map(move |s| self.expand_one(s, n))
+            .map(move |s| self.expand_one(s, at_upper_bound, n))
     }
 
     pub fn number_of_permutations(&self) -> usize {
@@ -44,7 +45,7 @@ impl Candidate {
         self.wasted_symbols + self.future_waste(n)
     }
 
-    fn expand_one(&self, symbol: usize, n: usize) -> Self {
+    fn expand_one(&self, symbol: usize, at_upper_bound: bool, n: usize) -> Self {
         let tail_of_string = self.build_tail(symbol, n);
 
         if Self::less_than_full(&self.tail_of_string, n) {
@@ -56,6 +57,10 @@ impl Candidate {
         }
 
         if self.tail_starts_with(symbol) {
+            return self.candidate_with_wasted_symbol(tail_of_string);
+        }
+
+        if at_upper_bound {
             return self.candidate_with_wasted_symbol(tail_of_string);
         }
 
