@@ -2,7 +2,9 @@ use super::*;
 use std::usize::MAX;
 
 type Subject = Frontier;
+
 const N: usize = 5;
+const F: bool = false;
 
 mod new {
     use super::*;
@@ -79,6 +81,85 @@ mod next {
         assert_eq!(candidate.number_of_permutations(), 1);
 
         assert_eq!(subject.next(), None);
+    }
+}
+
+mod prune {
+    use super::*;
+
+    #[test]
+    fn it_removes_candidates_with_the_given_waste_that_do_not_meet_the_threshold() {
+        let mut subject = Subject::new();
+        let candidate = Candidate::seed(N);
+
+        for c in candidate.expand(MAX, N) {
+            subject.add(c, N);
+        }
+
+        assert_eq!(subject.len(), 4);
+
+        // Current state of Frontier:
+        // 012340: 0 waste, 2 permutations
+        // 012341: 1 waste, 1 permutation
+        // 012342: 2 waste, 1 permutation
+        // 012343: 3 waste, 1 permutation
+
+        subject.prune(2, 0, F); // does nothing (above threshold)
+        assert_eq!(subject.len(), 4);
+
+        subject.prune(2, 1, F); // does nothing (equal to threshold)
+        assert_eq!(subject.len(), 4);
+
+        subject.prune(2, 2, F); // prunes 012342
+        assert_eq!(subject.len(), 3);
+
+        subject.prune(2, 3, F); // does nothing (already pruned)
+        assert_eq!(subject.len(), 3);
+
+        // Check the right candidate was pruned:
+        assert_eq!(subject.next().unwrap().tail_of_string, &[2, 3, 4, 0]);
+        assert_eq!(subject.next().unwrap().tail_of_string, &[2, 3, 4, 1]);
+        assert_eq!(subject.next().unwrap().tail_of_string, &[4, 3]);
+        assert_eq!(subject.next(), None);
+    }
+
+    mod when_pruning_eagerly {
+        use super::*;
+
+        #[test]
+        fn it_also_prunes_candidates_that_have_more_wasted_symbols() {
+            let mut subject = Subject::new();
+            let candidate = Candidate::seed(N);
+
+            for c in candidate.expand(MAX, N) {
+                subject.add(c, N);
+            }
+
+            assert_eq!(subject.len(), 4);
+
+            // Current state of Frontier:
+            // 012340: 0 waste, 2 permutations
+            // 012341: 1 waste, 1 permutation
+            // 012342: 2 waste, 1 permutation
+            // 012343: 3 waste, 1 permutation
+
+            subject.prune(2, 0, true); // does nothing (above threshold)
+            assert_eq!(subject.len(), 4);
+
+            subject.prune(2, 1, true); // does nothing (equal to threshold)
+            assert_eq!(subject.len(), 4);
+
+            subject.prune(2, 2, true); // prunes 012342 _and_ 012343
+            assert_eq!(subject.len(), 2);
+
+            subject.prune(2, 3, true); // does nothing (already pruned)
+            assert_eq!(subject.len(), 2);
+
+            // Check the right candidate was pruned:
+            assert_eq!(subject.next().unwrap().tail_of_string, &[2, 3, 4, 0]);
+            assert_eq!(subject.next().unwrap().tail_of_string, &[2, 3, 4, 1]);
+            assert_eq!(subject.next(), None);
+        }
     }
 }
 

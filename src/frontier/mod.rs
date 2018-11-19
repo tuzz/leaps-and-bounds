@@ -29,6 +29,30 @@ impl Frontier {
         bucket.dequeue_max()
     }
 
+    fn prune(&mut self, wasted_symbols: usize, threshold: usize, eager: bool) -> Option<()> {
+        let max = match eager {
+            true => self.max_waste()?,
+            false => wasted_symbols,
+        };
+
+        for w in wasted_symbols..=max {
+            self.prune_one(w, threshold);
+        }
+
+        None
+    }
+
+    fn prune_one(&mut self, wasted_symbols: usize, threshold: usize) -> Option<()> {
+        let mut bucket = self.priority_queue.bucket(wasted_symbols);
+        let min = bucket.min_priority()?;
+
+        for p in min..threshold {
+            bucket.prune(p);
+        }
+
+        None
+    }
+
     fn len(&self) -> usize {
         self.priority_queue.len()
     }
