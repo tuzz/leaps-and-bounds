@@ -1,5 +1,6 @@
 use super::*;
 use std::usize::MAX;
+use bit_set::BitSet;
 
 type Subject = Frontier;
 
@@ -152,6 +153,116 @@ mod prune {
             assert_eq!(subject.next().unwrap().tail_of_string, &[2, 3, 4, 1]);
             assert_eq!(subject.next(), None);
         }
+    }
+}
+
+mod unprune {
+    use super::*;
+
+    #[test]
+    fn it_unprunes_buckets_based_on_the_bounds_for_the_current_wasted_symbols() {
+        let mut subject = Subject::new();
+
+        add_pruned_candidate(&mut subject, 1, 3);
+        add_pruned_candidate(&mut subject, 1, 4);
+        add_pruned_candidate(&mut subject, 1, 5);
+        add_pruned_candidate(&mut subject, 1, 6);
+        add_pruned_candidate(&mut subject, 1, 7);
+
+        add_pruned_candidate(&mut subject, 2, 7);
+        add_pruned_candidate(&mut subject, 2, 8);
+        add_pruned_candidate(&mut subject, 2, 9);
+        add_pruned_candidate(&mut subject, 2, 10);
+        add_pruned_candidate(&mut subject, 2, 11);
+
+        assert_eq!(subject.len(), 0);
+
+        // The bounds we're exploring for waste 3 are 16..=18:
+        let lower_bounds = vec![4, 8, 12, 16];
+        let upper_bounds = vec![4, 8, 12, 18];
+
+        // We've just moved on to the next number of wasted symbols:
+        let previous_waste = 3;
+        let wasted_symbols = previous_waste + 1;
+
+        // Waste 2 is allowed 1 more wasted symbol which can add 8 permutations.
+        // To improve on the lower bound of 16, we'd need to see 9 permutations.
+        // We should unprune waste 2 candidates with permutations between 9..=10
+
+        // Waste 1 is allowed 2 more wasted symbols which can add 12 permutations.
+        // To improve on the lower bound of 16, we'd need to see 5 permutations.
+        // We should unprune waste 1 candidates with permutations between 5..=6
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(subject.len(), 1);
+        assert_eq!(is_pruned(&subject, 2, 10), false);
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(subject.len(), 2);
+        assert_eq!(is_pruned(&subject, 1, 6), false);
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(subject.len(), 3);
+        assert_eq!(is_pruned(&subject, 2, 9), false);
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(subject.len(), 4);
+        assert_eq!(is_pruned(&subject, 1, 5), false);
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(subject.len(), 4);
+    }
+
+    #[test]
+    fn it_returns_the_number_of_wasted_symbols_for_the_bucket_that_was_unpruned() {
+        let mut subject = Subject::new();
+
+        add_pruned_candidate(&mut subject, 1, 6);
+        add_pruned_candidate(&mut subject, 2, 10);
+
+        let lower_bounds = vec![4, 8, 12, 16];
+        let upper_bounds = vec![4, 8, 12, 18];
+
+        assert_eq!(subject.unprune(4, &lower_bounds, &upper_bounds), 2);
+        assert_eq!(subject.unprune(4, &lower_bounds, &upper_bounds), 1);
+    }
+
+    #[test]
+    fn it_returns_the_original_wasted_symbols_once_all_buckets_have_been_unpruned() {
+        let mut subject = Subject::new();
+
+        add_pruned_candidate(&mut subject, 1, 6);
+        add_pruned_candidate(&mut subject, 2, 10);
+
+        let lower_bounds = vec![4, 8, 12, 16];
+        let upper_bounds = vec![4, 8, 12, 18];
+
+        subject.unprune(4, &lower_bounds, &upper_bounds);
+        subject.unprune(4, &lower_bounds, &upper_bounds);
+
+        assert_eq!(subject.unprune(4, &lower_bounds, &upper_bounds), 4);
+        assert_eq!(subject.unprune(4, &lower_bounds, &upper_bounds), 4);
+    }
+
+    fn add_pruned_candidate(frontier: &mut Frontier, wasted_symbols: usize, permutations: usize) {
+        let mut permutations_seen = BitSet::new();
+
+        for i in 0..permutations {
+            permutations_seen.insert(i);
+        }
+
+        let candidate = Candidate {
+            permutations_seen,
+            tail_of_string: vec![0, 1, 2, 3],
+            wasted_symbols
+        };
+
+        frontier.add(candidate, N);
+        frontier.disable(&(wasted_symbols, permutations));
+    }
+
+    fn is_pruned(frontier: &Frontier, wasted_symbols: usize, permutations: usize) -> bool {
+        frontier.disabled.contains(&(wasted_symbols, permutations))
     }
 }
 

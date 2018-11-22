@@ -46,21 +46,36 @@ impl Frontier {
         };
 
         for w in wasted_symbols..=max {
-            self.prune_one(w, threshold);
+            for p in 0..threshold {
+                self.disable(&(w, p));
+            }
         }
 
         None
     }
 
-    pub fn prune_one(&mut self, wasted_symbols: usize, threshold: usize) -> Option<()> {
-        let mut bucket = self.enabled_queue.bucket(wasted_symbols);
-        let min = bucket.min_priority()?;
-
-        for p in min..threshold {
-            self.disable(&(wasted_symbols, p));
+    pub fn unprune(&mut self, wasted_symbols: usize, lower_bounds: &[usize], upper_bounds: &[usize]) -> usize {
+        if wasted_symbols < lower_bounds.len() {
+            return wasted_symbols;
         }
 
-        None
+        let previous_waste = wasted_symbols - 1;
+
+        let lower_bound = lower_bounds[previous_waste];
+        let upper_bound = upper_bounds[previous_waste];
+
+        for p in ((lower_bound + 1)..=upper_bound).rev() {
+            for w in (0..=previous_waste).rev() {
+                let allowed_waste = previous_waste - w;
+                let max_permutations = upper_bounds[allowed_waste];
+
+                if self.enable(&(w, p.saturating_sub(max_permutations))) {
+                    return w;
+                }
+            }
+        }
+
+        wasted_symbols
     }
 
     pub fn len(&self) -> usize {

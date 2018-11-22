@@ -9,6 +9,8 @@ use self::bounds::Bounds;
 use self::candidate::Candidate;
 use self::frontier::Frontier;
 
+use std::process::exit;
+
 fn main() {
     let n = 4;
 
@@ -18,9 +20,15 @@ fn main() {
 
     frontier.add(candidate, n);
 
-    while let Some(wasted_symbols) = frontier.min_waste() {
-        let next_candidate = frontier.next().unwrap();
-        let permutations = next_candidate.number_of_permutations();
+    while let Some(mut wasted_symbols) = frontier.min_waste() {
+        wasted_symbols = frontier.unprune(
+            wasted_symbols,
+            &bounds.lower_bounds,
+            &bounds.upper_bounds,
+        );
+
+        let candidate = frontier.next().unwrap();
+        let permutations = candidate.number_of_permutations();
 
         if bounds.update(wasted_symbols, permutations) {
             let threshold = bounds.thresholds[wasted_symbols];
@@ -30,12 +38,12 @@ fn main() {
         }
 
         let upper_bound = bounds.upper(wasted_symbols);
-        for candidate in next_candidate.expand(upper_bound, n) {
-            frontier.add(candidate, n);
+        for child in candidate.expand(upper_bound, n) {
+            frontier.add(child, n);
         }
 
         if bounds.found_for_superpermutation() {
-            break;
+            exit(0);
         }
     }
 }
