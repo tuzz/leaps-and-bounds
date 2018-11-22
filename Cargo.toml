@@ -6,5 +6,5 @@ edition = "2018"
 
 [dependencies]
 bit-set = "0.5.0"
-bucket_queue = "1.0.0"
+bucket_queue = "2.0.0"
 lehmer = "2.0.0"

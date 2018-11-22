@@ -12,7 +12,10 @@ mod new {
     #[test]
     fn it_builds_a_new_frontier() {
         let subject = Subject::new();
-        assert_eq!(subject.len(), 0);
+
+        assert_eq!(subject.enabled_queue.len(), 0);
+        assert_eq!(subject.disabled_queue.len(), 0);
+        assert_eq!(subject.disabled.len(), 0);
     }
 }
 
@@ -45,42 +48,31 @@ mod add {
         let permutations = candidate.number_of_permutations();
 
         subject.add(candidate, N);
-        let mut queue = subject.priority_queue;
+        let mut queue = subject.enabled_queue;
 
         assert_eq!(queue.min_priority(), Some(total_waste));
         assert_eq!(queue.min_bucket().min_priority(), Some(permutations));
     }
-}
 
-mod next {
-    use super::*;
+    mod when_the_bucket_is_disabled {
+        use super::*;
 
-    #[test]
-    fn it_returns_the_candidates_ordered_by_waste_asc_then_number_of_permutations_desc() {
-        let mut subject = Subject::new();
-        let candidate = Candidate::seed(N);
+        #[test]
+        fn it_adds_the_candidate_to_the_disabled_queue() {
+            let mut subject = Subject::new();
+            let seed = Candidate::seed(N);
 
-        for c in candidate.expand(MAX, N) {
-            subject.add(c, N);
+            let candidate = seed.expand(MAX, N).last().unwrap();
+
+            let total_waste = candidate.total_waste(N);
+            let permutations = candidate.number_of_permutations();
+
+            subject.disable(&(total_waste, permutations));
+            subject.add(candidate, N);
+
+            assert_eq!(subject.enabled_queue.len(), 0);
+            assert_eq!(subject.disabled_queue.len(), 1);
         }
-
-        let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(N), 0);
-        assert_eq!(candidate.number_of_permutations(), 2);
-
-        let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(N), 1);
-        assert_eq!(candidate.number_of_permutations(), 1);
-
-        let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(N), 2);
-        assert_eq!(candidate.number_of_permutations(), 1);
-
-        let candidate = subject.next().unwrap();
-        assert_eq!(candidate.total_waste(N), 3);
-        assert_eq!(candidate.number_of_permutations(), 1);
-
-        assert_eq!(subject.next(), None);
     }
 }
 
@@ -163,11 +155,11 @@ mod prune {
     }
 }
 
-mod len {
+mod next {
     use super::*;
 
     #[test]
-    fn it_returns_how_many_candidates_there_are_in_total() {
+    fn it_returns_the_candidates_ordered_by_waste_asc_then_number_of_permutations_desc() {
         let mut subject = Subject::new();
         let candidate = Candidate::seed(N);
 
@@ -175,15 +167,27 @@ mod len {
             subject.add(c, N);
         }
 
-        assert_eq!(subject.len(), 4);
+        let candidate = subject.next().unwrap();
+        assert_eq!(candidate.total_waste(N), 0);
+        assert_eq!(candidate.number_of_permutations(), 2);
+
+        let candidate = subject.next().unwrap();
+        assert_eq!(candidate.total_waste(N), 1);
+        assert_eq!(candidate.number_of_permutations(), 1);
+
+        let candidate = subject.next().unwrap();
+        assert_eq!(candidate.total_waste(N), 2);
+        assert_eq!(candidate.number_of_permutations(), 1);
+
+        let candidate = subject.next().unwrap();
+        assert_eq!(candidate.total_waste(N), 3);
+        assert_eq!(candidate.number_of_permutations(), 1);
+
+        assert_eq!(subject.next(), None);
     }
-}
-
-mod len_for_waste {
-    use super::*;
 
     #[test]
-    fn it_returns_how_many_candidates_there_are_for_the_given_number_of_wasted_symbols() {
+    fn it_does_not_return_candidates_from_the_disabled_queue() {
         let mut subject = Subject::new();
         let candidate = Candidate::seed(N);
 
@@ -191,12 +195,20 @@ mod len_for_waste {
             subject.add(c, N);
         }
 
-        assert_eq!(subject.len_for_waste(0), 1);
-        assert_eq!(subject.len_for_waste(1), 1);
-        assert_eq!(subject.len_for_waste(2), 1);
-        assert_eq!(subject.len_for_waste(3), 1);
+        subject.disable(&(1, 1));
+        subject.disable(&(2, 1));
 
-        assert_eq!(subject.len_for_waste(4), 0);
+        let candidate = subject.next().unwrap();
+        assert_eq!(candidate.total_waste(N), 0);
+        assert_eq!(candidate.number_of_permutations(), 2);
+
+        // (1, 1) and (2, 1) are not returned
+
+        let candidate = subject.next().unwrap();
+        assert_eq!(candidate.total_waste(N), 3);
+        assert_eq!(candidate.number_of_permutations(), 1);
+
+        assert_eq!(subject.next(), None);
     }
 }
 
@@ -235,5 +247,79 @@ mod max_waste {
         }
 
         assert_eq!(subject.max_waste(), Some(3));
+    }
+}
+
+mod enable_and_disable {
+    use super::*;
+
+    #[test]
+    fn it_adds_or_removes_the_bucket_id_from_the_disabled_hash_set() {
+        let mut subject = Subject::new();
+        let bucket_id = (2, 3);
+
+        subject.disable(&bucket_id);
+        assert_eq!(subject.disabled.contains(&bucket_id), true);
+
+        subject.enable(&bucket_id);
+        assert_eq!(subject.disabled.contains(&bucket_id), false);
+    }
+
+    #[test]
+    fn it_moves_the_bucket_between_the_enabled_and_disabled_queues() {
+        let mut subject = Subject::new();
+
+        let seed = Candidate::seed(N);
+        let candidate = seed.expand(MAX, N).last().unwrap();
+
+        let total_waste = candidate.total_waste(N);
+        let permutations = candidate.number_of_permutations();
+
+        let bucket_id = (total_waste, permutations);
+
+        subject.add(candidate, N);
+
+        assert_eq!(subject.enabled_queue.len(), 1);
+        assert_eq!(subject.disabled_queue.len(), 0);
+
+        subject.disable(&bucket_id);
+
+        assert_eq!(subject.enabled_queue.len(), 0);
+        assert_eq!(subject.disabled_queue.len(), 1);
+
+        subject.enable(&bucket_id);
+
+        assert_eq!(subject.enabled_queue.len(), 1);
+        assert_eq!(subject.disabled_queue.len(), 0);
+    }
+
+    #[test]
+    fn it_returns_true_if_the_bucket_that_was_moved_contained_something() {
+        let mut subject = Subject::new();
+
+        let seed = Candidate::seed(N);
+        let candidate = seed.expand(MAX, N).last().unwrap();
+
+        let total_waste = candidate.total_waste(N);
+        let permutations = candidate.number_of_permutations();
+
+        let bucket_id = (total_waste, permutations);
+
+        assert_eq!(subject.enable(&bucket_id), false);
+        assert_eq!(subject.disable(&bucket_id), false);
+
+        subject.add(candidate, N);
+
+        assert_eq!(subject.disable(&bucket_id), false);
+        assert_eq!(subject.disable(&bucket_id), false);
+
+        assert_eq!(subject.enable(&bucket_id), true);
+        assert_eq!(subject.enable(&bucket_id), false);
+
+        subject.next();
+        assert_eq!(subject.len(), 0);
+
+        assert_eq!(subject.disable(&bucket_id), false);
+        assert_eq!(subject.enable(&bucket_id), false);
     }
 }

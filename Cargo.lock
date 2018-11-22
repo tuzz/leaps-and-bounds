@@ -13,7 +13,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "bucket_queue"
-version = "1.0.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -26,12 +26,12 @@ name = "superpermutation"
 version = "0.1.0"
 dependencies = [
  "bit-set 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "bucket_queue 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bucket_queue 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lehmer 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [metadata]
 "checksum bit-set 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6f1efcc46c18245a69c38fcc5cc650f16d3a59d034f3106e9ed63748f695730a"
 "checksum bit-vec 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4440d5cb623bb7390ae27fec0bb6c61111969860f8e3ae198bfa0663645e67cf"
-"checksum bucket_queue 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "30b6405fbcec1c9ee512dcc3be3bb7f20e9e5db6f2085dc40a684a9f5e7989cc"
+"checksum bucket_queue 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "899ef58ed41750685cdd9900e2a49e66477835f639ca6798650a6e13e62b5463"
 "checksum lehmer 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e5cfae3c712bc6cd3b87ab69d216a4022e929cb02a41c183f251ceff625f98c0"

@@ -1,30 +1,40 @@
 use super::candidate::Candidate;
 
 use ::bucket_queue::*;
+
 use std::collections::VecDeque;
+use std::collections::HashSet;
+
+type PriorityQueue = BucketQueue<BucketQueue<VecDeque<Candidate>>>;
+type BucketID = (usize, usize);
 
 pub struct Frontier {
-    priority_queue: BucketQueue<BucketQueue<VecDeque<Candidate>>>,
+    enabled_queue: PriorityQueue,
+    disabled_queue: PriorityQueue,
+    disabled: HashSet<BucketID>,
 }
 
 impl Frontier {
     pub fn new() -> Self {
-        let queue = BucketQueue::<BucketQueue<VecDeque<Candidate>>>::new();
-
-        Frontier { priority_queue: queue }
+        Frontier {
+            enabled_queue: PriorityQueue::new(),
+            disabled_queue: PriorityQueue::new(),
+            disabled: HashSet::new(),
+        }
     }
 
     pub fn add(&mut self, candidate: Candidate, n: usize) {
+        let wasted_symbols = candidate.total_waste(n);
         let permutations = candidate.permutations_seen.len();
 
-        self.priority_queue
-            .bucket_for_adding(candidate.total_waste(n))
+        self.queue_for(&(wasted_symbols, permutations))
+            .bucket_for_adding(wasted_symbols)
             .enqueue(candidate, permutations);
     }
 
     pub fn next(&mut self) -> Option<Candidate> {
         let waste = self.min_waste()?;
-        let bucket = self.priority_queue.bucket_for_removing(waste)?;
+        let bucket = self.enabled_queue.bucket_for_removing(waste)?;
 
         bucket.dequeue_max()
     }
@@ -43,31 +53,64 @@ impl Frontier {
     }
 
     pub fn prune_one(&mut self, wasted_symbols: usize, threshold: usize) -> Option<()> {
-        let mut bucket = self.priority_queue.bucket(wasted_symbols);
+        let mut bucket = self.enabled_queue.bucket(wasted_symbols);
         let min = bucket.min_priority()?;
 
         for p in min..threshold {
-            bucket.prune(p);
+            self.disable(&(wasted_symbols, p));
         }
 
         None
     }
 
     pub fn len(&self) -> usize {
-        self.priority_queue.len()
-    }
-
-    pub fn len_for_waste(&self, wasted_symbols: usize) -> usize {
-        let bucket = self.priority_queue.bucket_for_peeking(wasted_symbols);
-        bucket.map_or(0, |b| b.len())
+        self.enabled_queue.len()
     }
 
     pub fn min_waste(&self) -> Option<usize> {
-        self.priority_queue.min_priority()
+        self.enabled_queue.min_priority()
     }
 
     pub fn max_waste(&self) -> Option<usize> {
-        self.priority_queue.max_priority()
+        self.enabled_queue.max_priority()
+    }
+
+    fn enable(&mut self, bucket_id: &BucketID) -> bool {
+        if self.disabled.remove(bucket_id) {
+            Self::swap(&mut self.disabled_queue, &mut self.enabled_queue, bucket_id).is_some()
+        } else {
+            false
+        }
+    }
+
+    fn disable(&mut self, bucket_id: &BucketID) -> bool {
+        if self.disabled.insert(*bucket_id) {
+            Self::swap(&mut self.enabled_queue, &mut self.disabled_queue, bucket_id).is_some()
+        } else {
+            false
+        }
+    }
+
+    fn queue_for(&mut self, bucket_id: &BucketID) -> &mut PriorityQueue {
+        if self.disabled.contains(bucket_id) {
+            &mut self.disabled_queue
+        } else {
+            &mut self.enabled_queue
+        }
+    }
+
+    fn swap(from: &mut PriorityQueue, to: &mut PriorityQueue, bucket_id: &BucketID) -> Option<()> {
+        let bucket_0 = from.bucket_for_peeking(bucket_id.0)?;
+        let bucket_1 = bucket_0.bucket_for_peeking(bucket_id.1)?;
+
+        if bucket_1.is_empty() {
+            return None;
+        }
+
+        let contents = from.bucket(bucket_id.0).replace(bucket_id.1, None);
+        to.bucket(bucket_id.0).replace(bucket_id.1, contents);
+
+        Some(())
     }
 }
 
