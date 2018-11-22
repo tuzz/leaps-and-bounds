@@ -1,4 +1,4 @@
-use std::cmp::max;
+use std::cmp::{min, max};
 
 #[derive(Debug)]
 pub struct Bounds {
@@ -71,7 +71,8 @@ impl Bounds {
     }
 
     fn decrease_upper_bound(&mut self, index: usize) {
-        self.upper_bounds[index] = self.lower_bounds[index] + self.upper_bounds[0];
+        let bound = self.lower_bounds[index] + self.upper_bounds[0];
+        self.upper_bounds[index] = min(bound, self.max);
     }
 
     fn factorial(n: usize) -> usize {

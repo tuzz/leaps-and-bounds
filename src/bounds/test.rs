@@ -131,6 +131,19 @@ mod update {
         }
 
         #[test]
+        fn it_limits_the_upper_bound_to_factorial_n() {
+            let mut subject = Subject::new(N);
+
+            subject.update(0, 5);
+            assert_eq!(subject.lower_bounds, &[5]);
+            assert_eq!(subject.upper_bounds, &[120]);
+
+            subject.update(1, 120);
+            assert_eq!(subject.lower_bounds, &[5, 120]);
+            assert_eq!(subject.upper_bounds, &[5, 120]);
+        }
+
+        #[test]
         fn it_sets_the_threshold_to_the_lower_bound_minus_first_upper_bound() {
             let mut subject = Subject::new(N);
 
