@@ -71,8 +71,17 @@ impl Bounds {
     }
 
     fn decrease_upper_bound(&mut self, index: usize) {
-        let bound = self.lower_bounds[index] + self.upper_bounds[0];
-        self.upper_bounds[index] = min(bound, self.max);
+        let mut upper_bound = self.max;
+
+        for w in 0..index {
+            let starting_point = self.upper_bounds[w];
+            let allowed_waste = index - w - 1;
+            let maximum_permutations = self.upper_bounds[allowed_waste];
+
+            upper_bound = min(upper_bound, starting_point + maximum_permutations);
+        }
+
+        self.upper_bounds[index] = upper_bound;
     }
 
     fn factorial(n: usize) -> usize {

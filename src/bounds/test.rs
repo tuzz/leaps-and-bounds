@@ -114,33 +114,45 @@ mod update {
         }
 
         #[test]
-        fn it_sets_the_upper_bound_to_its_lower_bound_plus_the_first_upper_bound() {
+        fn it_sets_the_upper_bound_based_on_the_smallest_gap_to_other_wasted_symbols() {
             let mut subject = Subject::new(N);
 
             subject.update(0, 5);
             assert_eq!(subject.lower_bounds, &[5]);
             assert_eq!(subject.upper_bounds, &[120]);
 
-            subject.update(1, 3);
-            assert_eq!(subject.lower_bounds, &[5, 5]);
+            subject.update(1, 7);
+            assert_eq!(subject.lower_bounds, &[5, 7]);
             assert_eq!(subject.upper_bounds, &[5, 10]);
 
-            subject.update(3, 7);
-            assert_eq!(subject.lower_bounds, &[5, 5, 7, 7]);
-            assert_eq!(subject.upper_bounds, &[5, 5, 7, 12]);
+            subject.update(2, 11);
+            assert_eq!(subject.lower_bounds, &[5, 7, 11]);
+
+            // This upper bound is set to 12 because if we start from the best
+            // candidates with 1 wasted symbol, we know that the maximum we can
+            // add is 7 permutations with 1 additional wasted symbol.
+            assert_eq!(subject.upper_bounds, &[5, 7, 12]);
+
+            subject.update(3, 11);
+            assert_eq!(subject.lower_bounds, &[5, 7, 11, 11]);
+            assert_eq!(subject.upper_bounds, &[5, 7, 11, 14]);
         }
 
         #[test]
         fn it_limits_the_upper_bound_to_factorial_n() {
             let mut subject = Subject::new(N);
 
-            subject.update(0, 5);
-            assert_eq!(subject.lower_bounds, &[5]);
+            subject.update(0, 100);
+            assert_eq!(subject.lower_bounds, &[100]);
             assert_eq!(subject.upper_bounds, &[120]);
 
-            subject.update(1, 120);
-            assert_eq!(subject.lower_bounds, &[5, 120]);
-            assert_eq!(subject.upper_bounds, &[5, 120]);
+            subject.update(1, 110);
+            assert_eq!(subject.lower_bounds, &[100, 110]);
+            assert_eq!(subject.upper_bounds, &[100, 120]);
+
+            subject.update(2, 120);
+            assert_eq!(subject.lower_bounds, &[100, 110, 120]);
+            assert_eq!(subject.upper_bounds, &[100, 110, 120]);
         }
 
         #[test]
