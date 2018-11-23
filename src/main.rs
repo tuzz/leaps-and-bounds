@@ -12,7 +12,7 @@ use self::frontier::Frontier;
 use std::process::exit;
 
 fn main() {
-    let n = 4;
+    let n = 6;
 
     let candidate = Candidate::seed(n);
     let mut frontier = Frontier::new();

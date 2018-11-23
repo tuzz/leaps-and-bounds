@@ -133,6 +133,51 @@ mod expand_one {
             let candidate = candidate.expand_one(3, F, N);
             assert_eq!(candidate.wasted_symbols, 2);
         }
+
+        mod and_the_permutation_has_been_seen_before {
+            use super::*;
+
+            #[test]
+            fn it_has_one_additional_wasted_symbol() {
+                let subject = Subject::seed(N);
+
+                // Waste a symbol after the first permutation.
+                let candidate = subject.expand_one(3, F, N);
+                assert_eq!(candidate.wasted_symbols, 1);
+
+                let candidate = candidate.expand_one(0, F, N);
+                let candidate = candidate.expand_one(1, F, N);
+                let candidate = candidate.expand_one(2, F, N);
+                let candidate = candidate.expand_one(3, F, N);
+                assert_eq!(candidate.wasted_symbols, 4);
+
+                let candidate = candidate.expand_one(4, F, N);
+                assert_eq!(candidate.wasted_symbols, 5);
+            }
+
+            mod and_the_only_choice_of_next_symbol_has_also_been_seen_before {
+                use super::*;
+
+                #[test]
+                fn it_has_two_additional_wasted_symbols() {
+                    let subject = Subject::seed(N);
+
+                    // No symbol is wasted here...
+
+                    let candidate = subject.expand_one(0, F, N);
+                    let candidate = candidate.expand_one(1, F, N);
+                    let candidate = candidate.expand_one(2, F, N);
+                    let candidate = candidate.expand_one(3, F, N);
+                    assert_eq!(candidate.wasted_symbols, 0);
+
+                    // ... and the only choice after 4 (0) is already taken.
+                    let candidate = candidate.expand_one(4, F, N);
+
+                    // So we penalise by an extra symbol of waste:
+                    assert_eq!(candidate.wasted_symbols, 2);
+                }
+            }
+        }
     }
 
     mod when_the_candidate_is_at_the_upper_bound_for_wasted_symbols {
