@@ -276,3 +276,18 @@ mod total_waste {
         assert_eq!(depth_4.total_waste(N), 7);
     }
 }
+
+mod serialization {
+    use super::*;
+    use bincode::{serialize, deserialize};
+
+    #[test]
+    fn it_can_be_serialized_and_deserialized() {
+        let subject = Subject::seed(N);
+
+        let data = serialize(&subject).unwrap();
+        let candidate: Subject = deserialize(&data).unwrap();
+
+        assert_eq!(subject, candidate);
+    }
+}

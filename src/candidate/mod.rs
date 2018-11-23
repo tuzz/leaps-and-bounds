@@ -1,10 +1,12 @@
+mod serialize;
+
 use bit_set::BitSet;
 use lehmer::Lehmer;
-
 use std::iter::once;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Candidate {
+    #[serde(serialize_with="serialize::serialize", deserialize_with="serialize::deserialize")]
     pub permutations_seen: BitSet,
     pub tail_of_string: Vec<usize>,
     pub wasted_symbols: usize,
