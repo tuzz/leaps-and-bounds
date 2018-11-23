@@ -23,6 +23,7 @@ impl Bounds {
     pub fn update(&mut self, index: usize, bound: usize) -> bool {
         if self.lower_bounds.len() <= index {
             self.add_new_index(index, bound);
+            println!("{} wasted characters: at most {} permutations", index - 1, bound);
             return true;
         }
 
@@ -84,7 +85,7 @@ impl Bounds {
         self.upper_bounds[index] = upper_bound;
     }
 
-    fn factorial(n: usize) -> usize {
+    pub fn factorial(n: usize) -> usize {
         match n {
             0 => 1,
             _ => n * Self::factorial(n - 1),
