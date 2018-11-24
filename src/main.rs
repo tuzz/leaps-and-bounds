@@ -3,6 +3,7 @@ extern crate bucket_queue;
 
 mod bounds;
 mod candidate;
+mod disk;
 mod frontier;
 
 use self::bounds::Bounds;
