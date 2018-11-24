@@ -21,23 +21,96 @@ mod new {
 
     #[test]
     fn it_creates_a_directory_at_the_path() {
-        let subject = subject("test-2", false);
+        subject("test-2", false);
         assert_eq!(Path::new(PATH).exists(), true);
     }
 }
 
-mod filename {
+mod basename {
     use super::*;
 
     #[test]
-    fn it_returns_a_filename_based_on_the_number_of_wasted_symbols_and_permutations() {
+    fn it_returns_a_name_based_on_the_number_of_wasted_symbols_and_permutations() {
         let subject = subject("test-3", false);
-        let actual = subject.filename(3, 4);
+        let actual = subject.basename(3, 4);
 
-        let basename = "test-3/candidates-with-3-wasted-symbols-and-4-permutations";
-        let expected = format!("{}/{}", PATH, basename);
+        let name = "test-3/candidates-with-3-wasted-symbols-and-4-permutations.dat";
+        let expected = format!("{}/{}", PATH, name);
 
         assert_eq!(actual, expected);
+    }
+}
+
+mod filename_for_reading {
+    use super::*;
+
+    #[test]
+    fn it_returns_none_if_no_file_exists() {
+        let subject = subject("test-4", false);
+        let filename = subject.filename_for_reading(3, 4);
+
+        assert_eq!(filename, None);
+    }
+
+    #[test]
+    fn it_returns_the_name_of_the_first_available_file() {
+        let candidate = Candidate::seed(5);
+        let bucket = VecDeque::from(vec![candidate]);
+
+        let subject = subject("test-5", false);
+
+        subject.write(&bucket, 3, 4); // 0
+        subject.write(&bucket, 3, 4); // 1
+        subject.write(&bucket, 3, 4); // 2
+
+        let filename = subject.filename_for_reading(3, 4).unwrap();
+        assert_eq!(&filename[70..], "-4-permutations.dat.0");
+
+        let filename = subject.filename_for_reading(3, 4).unwrap();
+        assert_eq!(&filename[70..], "-4-permutations.dat.0");
+
+        subject.read(3, 4); // delete 0
+
+        let filename = subject.filename_for_reading(3, 4).unwrap();
+        assert_eq!(&filename[70..], "-4-permutations.dat.1");
+
+        let filename = subject.filename_for_reading(3, 4).unwrap();
+        assert_eq!(&filename[70..], "-4-permutations.dat.1");
+
+        subject.read(3, 4); // delete 1
+
+        let filename = subject.filename_for_reading(3, 4).unwrap();
+        assert_eq!(&filename[70..], "-4-permutations.dat.2");
+    }
+}
+
+mod filename_for_writing {
+    use super::*;
+
+    #[test]
+    fn it_adds_a_suffix_to_the_basename() {
+        let subject = subject("test-6", false);
+
+        let filename = subject.filename_for_writing(3, 4);
+        assert_eq!(&filename[70..], "-4-permutations.dat.0");
+    }
+
+    #[test]
+    fn it_increments_the_index_each_time_a_file_is_written() {
+        let candidate = Candidate::seed(5);
+        let bucket = VecDeque::from(vec![candidate]);
+
+        let subject = subject("test-7", false);
+        let filename = subject.filename_for_writing(3, 4);
+        assert_eq!(&filename[70..], "-4-permutations.dat.0");
+
+        subject.write(&bucket, 3, 4);
+        let filename = subject.filename_for_writing(3, 4);
+        assert_eq!(&filename[70..], "-4-permutations.dat.1");
+
+        subject.write(&bucket, 3, 4);
+        let filename = subject.filename_for_writing(3, 4);
+        assert_eq!(&filename[70..], "-4-permutations.dat.2");
     }
 }
 
@@ -49,10 +122,10 @@ mod write {
         let candidate = Candidate::seed(5);
         let bucket = VecDeque::from(vec![candidate]);
 
-        let subject = subject("test-4", false);
+        let subject = subject("test-8", false);
         subject.write(&bucket, 3, 4);
 
-        let filename = subject.filename(3, 4);;
+        let filename = subject.filename_for_reading(3, 4).unwrap();
         assert_eq!(Path::new(&filename).exists(), true);
     }
 }
@@ -65,11 +138,26 @@ mod read {
         let candidate = Candidate::seed(5);
         let bucket = VecDeque::from(vec![candidate]);
 
-        let subject = subject("test-5", false);
+        let subject = subject("test-9", false);
         subject.write(&bucket, 3, 4);
 
         let bucket_from_file = subject.read(3, 4);
-        assert_eq!(bucket_from_file, bucket);
+        assert_eq!(bucket_from_file, Some(bucket));
+    }
+
+    #[test]
+    fn it_deletes_the_file() {
+        let candidate = Candidate::seed(5);
+        let bucket = VecDeque::from(vec![candidate]);
+
+        let subject = subject("test-10", false);
+        subject.write(&bucket, 3, 4);
+
+        let filename = subject.filename_for_reading(3, 4).unwrap();
+        assert_eq!(Path::new(&filename).exists(), true);
+
+        subject.read(3, 4);
+        assert_eq!(Path::new(&filename).exists(), false);
     }
 }
 
@@ -81,14 +169,14 @@ mod gzip_compression {
         let bucket: VecDeque<_> = (0..1000)
             .map(|_| Candidate::seed(5)).collect();
 
-        let with_gzip = subject("test-6", true);
-        let without_gzip = subject("test-7", false);
+        let with_gzip = subject("test-11", true);
+        let without_gzip = subject("test-12", false);
 
         with_gzip.write(&bucket, 3, 4);
         without_gzip.write(&bucket, 5, 6);
 
-        let file1 = with_gzip.filename(3, 4);
-        let file2 = without_gzip.filename(5, 6);
+        let file1 = with_gzip.filename_for_reading(3, 4).unwrap();
+        let file2 = without_gzip.filename_for_reading(5, 6).unwrap();
 
         let with_gzip_size = metadata(file1).unwrap().len();
         let without_gzip_size = metadata(file2).unwrap().len();

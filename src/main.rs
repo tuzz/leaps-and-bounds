@@ -1,6 +1,12 @@
 extern crate bit_set;
 extern crate bucket_queue;
 
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate serde_bytes;
+extern crate bincode;
+
 mod bounds;
 mod candidate;
 mod disk;
