@@ -78,11 +78,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "glob"
-version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
 name = "lehmer"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -167,7 +162,6 @@ dependencies = [
  "bit-set 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bucket_queue 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "flate2 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "glob 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "lehmer 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.80 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_bytes 0.10.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -202,7 +196,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d663548de7f5cca343f1e0a48d14dcfb0e9eb4e079ec58883b7251539fa10aeb"
 "checksum flate2 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "96971e4fc2737f211ec8236fe16ac67695838ca3e25567c07b4f837d1f8f829c"
 "checksum flate2-crc 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8a792245eaed7747984647ce20582507985d69ccfacdddcb60bd5f451f21cbc5"
-"checksum glob 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)" = "8be18de09a56b60ed0edf84bc9df007e30040691af7acd1c41874faac5895bfb"
 "checksum lehmer 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e5cfae3c712bc6cd3b87ab69d216a4022e929cb02a41c183f251ceff625f98c0"
 "checksum libc 0.2.44 (registry+https://github.com/rust-lang/crates.io-index)" = "10923947f84a519a45c8fefb7dd1b3e8c08747993381adee176d7a82b4195311"
 "checksum miniz-sys 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)" = "0300eafb20369952951699b68243ab4334f4b10a88f411c221d444b36c40e649"

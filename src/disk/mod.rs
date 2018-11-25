@@ -1,16 +1,15 @@
 use super::candidate::Candidate;
 
 use std::collections::VecDeque;
-use std::path::Path;
 use std::fs::{File, create_dir_all, remove_dir_all, remove_file};
 use std::io::{BufWriter, BufReader};
 use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use bincode::{serialize_into, deserialize_from};
-use glob::glob;
 
 struct Disk {
     path: String,
     gzip: bool,
+    index: Vec<Vec<(usize, usize)>>,
 }
 
 impl Disk {
@@ -18,10 +17,10 @@ impl Disk {
         let _ = remove_dir_all(&path);
         create_dir_all(&path).expect(&format!("Failed to create {}", path));
 
-        Self { path, gzip }
+        Self { path, gzip, index: vec![] }
     }
 
-    pub fn read(&self, wasted_symbols: usize, permutations: usize) -> Option<VecDeque<Candidate>> {
+    pub fn read(&mut self, wasted_symbols: usize, permutations: usize) -> Option<VecDeque<Candidate>> {
         let filename = self.filename_for_reading(wasted_symbols, permutations)?;
         let file = File::open(&filename).expect(&format!("Failed to open {}", filename));
 
@@ -39,7 +38,7 @@ impl Disk {
         Some(candidates)
     }
 
-    pub fn write(&self, bucket: &VecDeque<Candidate>, wasted_symbols: usize, permutations: usize) {
+    pub fn write(&mut self, bucket: &VecDeque<Candidate>, wasted_symbols: usize, permutations: usize) {
         let filename = self.filename_for_writing(wasted_symbols, permutations);
         let file = File::create(&filename).expect(&format!("Failed to create {}", filename));
 
@@ -53,34 +52,47 @@ impl Disk {
         }
     }
 
-    pub fn filename_for_reading(&self, wasted_symbols: usize, permutations: usize) -> Option<String> {
-        let filename = self.basename(wasted_symbols, permutations);
-        let indexes = self.file_indexes(&filename);
-        let first_index = indexes.iter().min()?;
-
-        Some(format!("{}.{}", filename, first_index))
-    }
-
-    pub fn filename_for_writing(&self, wasted_symbols: usize, permutations: usize) -> String {
+    pub fn filename_for_reading(&mut self, wasted_symbols: usize, permutations: usize) -> Option<String> {
         let basename = self.basename(wasted_symbols, permutations);
-        let indexes = self.file_indexes(&basename);
-        let next_index = indexes.iter().max().map_or(0, |i| i + 1);
+        let index = self.index_to_read_from(wasted_symbols, permutations)?;
 
-        format!("{}.{}", basename, next_index)
+        Some(format!("{}.{}", basename, index))
     }
 
-    fn file_indexes(&self, basename: &String) -> Vec<usize> {
-        let pattern = format!("{}*", basename);
-        let glob = glob(&pattern).expect(&format!("Failed to glob {}", pattern));
+    pub fn filename_for_writing(&mut self, wasted_symbols: usize, permutations: usize) -> String {
+        let basename = self.basename(wasted_symbols, permutations);
+        let index = self.index_to_write_to(wasted_symbols, permutations);
 
-        glob
-            .map(|result| result.unwrap())
-            .map(|pathbuf| pathbuf.into_os_string())
-            .map(|osstr| osstr.into_string().unwrap())
-            .map(|string| string.rsplit(".").map(|s| s.to_string()).collect())
-            .map(|splits: Vec<String>| splits.first().cloned().unwrap())
-            .map(|suffix| suffix.parse::<usize>().unwrap())
-            .collect()
+        format!("{}.{}", basename, index)
+    }
+
+    pub fn index_to_read_from(&mut self, wasted_symbols: usize, permutations: usize) -> Option<usize> {
+        let index = self.index.get(wasted_symbols)?.get(permutations)?;
+
+        if index.0 <= index.1 {
+            let current = self.index[wasted_symbols][permutations].0;
+            self.index[wasted_symbols][permutations].0 = current + 1;
+
+            Some(current)
+        } else {
+            None
+        }
+    }
+
+    pub fn index_to_write_to(&mut self, wasted_symbols: usize, permutations: usize) -> usize {
+        if self.index.len() < wasted_symbols {
+            self.index.resize(wasted_symbols + 1, vec![]);
+        }
+
+        let nested = &mut self.index[wasted_symbols];
+
+        if nested.len() <= permutations {
+            nested.resize(permutations + 1, (0, 0));
+            0
+        } else {
+            (*nested)[permutations].1 += 1;
+            (*nested)[permutations].1
+        }
     }
 
     pub fn basename(&self, wasted_symbols: usize, permutations: usize) -> String {
