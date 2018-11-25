@@ -48,7 +48,7 @@ mod filename_for_reading {
 
     #[test]
     fn it_returns_none_if_no_file_exists() {
-        let mut subject = subject("test-4", false);
+        let subject = subject("test-4", false);
         let filename = subject.filename_for_reading(3, 4);
 
         assert_eq!(filename, None);
@@ -59,7 +59,7 @@ mod filename_for_reading {
         let candidate = Candidate::seed(5);
         let bucket = VecDeque::from(vec![candidate]);
 
-        let mut subject = subject("test-5", false);
+        let subject = subject("test-5", false);
 
         subject.write(&bucket, 3, 4); // 0
         subject.write(&bucket, 3, 4); // 1
@@ -81,7 +81,7 @@ mod filename_for_writing {
 
     #[test]
     fn it_adds_a_suffix_to_the_basename() {
-        let mut subject = subject("test-6", false);
+        let subject = subject("test-6", false);
 
         let filename = subject.filename_for_writing(3, 4);
         assert_eq!(&filename[70..], "-4-permutations.dat.0");
@@ -89,7 +89,7 @@ mod filename_for_writing {
 
     #[test]
     fn it_increments_the_index_each_time() {
-        let mut subject = subject("test-7", false);
+        let subject = subject("test-7", false);
         let filename = subject.filename_for_writing(3, 4);
         assert_eq!(&filename[70..], "-4-permutations.dat.0");
 
@@ -109,7 +109,7 @@ mod write {
         let candidate = Candidate::seed(5);
         let bucket = VecDeque::from(vec![candidate]);
 
-        let mut subject = subject("test-8", false);
+        let subject = subject("test-8", false);
         subject.write(&bucket, 3, 4);
 
         let filename = subject.filename_for_reading(3, 4).unwrap();
@@ -125,7 +125,7 @@ mod read {
         let candidate = Candidate::seed(5);
         let bucket = VecDeque::from(vec![candidate]);
 
-        let mut subject = subject("test-9", false);
+        let subject = subject("test-9", false);
         subject.write(&bucket, 3, 4);
 
         let bucket_from_file = subject.read(3, 4);
@@ -141,8 +141,8 @@ mod gzip_compression {
         let bucket: VecDeque<_> = (0..1000)
             .map(|_| Candidate::seed(5)).collect();
 
-        let mut with_gzip = subject("test-11", true);
-        let mut without_gzip = subject("test-12", false);
+        let with_gzip = subject("test-11", true);
+        let without_gzip = subject("test-12", false);
 
         with_gzip.write(&bucket, 3, 4);
         without_gzip.write(&bucket, 5, 6);

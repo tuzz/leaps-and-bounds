@@ -1,9 +1,11 @@
 use super::candidate::Candidate;
+use super::disk::Disk;
 
 use ::bucket_queue::*;
 
 use std::collections::VecDeque;
 use std::collections::HashSet;
+use rayon::prelude::*;
 
 type PriorityQueue = BucketQueue<BucketQueue<VecDeque<Candidate>>>;
 type BucketID = (usize, usize);
@@ -12,6 +14,7 @@ pub struct Frontier {
     enabled_queue: PriorityQueue,
     disabled_queue: PriorityQueue,
     disabled: HashSet<BucketID>,
+    disk: Disk,
 }
 
 impl Frontier {
@@ -20,6 +23,7 @@ impl Frontier {
             enabled_queue: PriorityQueue::new(),
             disabled_queue: PriorityQueue::new(),
             disabled: HashSet::new(),
+            disk: Disk::new("queue".to_string(), false), // TODO: configure
         }
     }
 
@@ -30,6 +34,8 @@ impl Frontier {
         self.queue_for(&(wasted_symbols, permutations))
             .bucket_for_adding(wasted_symbols)
             .enqueue(candidate, permutations);
+
+        self.offload_buckets_to_disk();
     }
 
     pub fn next(&mut self) -> Option<Candidate> {
@@ -68,8 +74,10 @@ impl Frontier {
             for w in (0..=previous_waste).rev() {
                 let allowed_waste = previous_waste - w;
                 let max_permutations = upper_bounds[allowed_waste];
+                let remainder = p.saturating_sub(max_permutations);
 
-                if self.enable(&(w, p.saturating_sub(max_permutations))) {
+                if self.enable(&(w, remainder)) {
+                    println!("  unpruning {:02}, {:03} ... queue: {}", w, remainder, self.len());
                     return w;
                 }
             }
@@ -79,7 +87,7 @@ impl Frontier {
     }
 
     pub fn len(&self) -> usize {
-        self.enabled_queue.len()
+        self.enabled_queue.len() + self.disabled_queue.len()
     }
 
     pub fn min_waste(&self) -> Option<usize> {
@@ -91,11 +99,24 @@ impl Frontier {
     }
 
     fn enable(&mut self, bucket_id: &BucketID) -> bool {
-        if self.disabled.remove(bucket_id) {
-            Self::swap(&mut self.disabled_queue, &mut self.enabled_queue, bucket_id).is_some()
-        } else {
-            false
+        if !self.disabled.contains(bucket_id) {
+            return false;
         }
+
+        // Swap in buckets from memory:
+        if Self::bucket_len(&self.disabled_queue, bucket_id) > 0 {
+            Self::swap(&mut self.disabled_queue, &mut self.enabled_queue, bucket_id);
+            return true;
+        }
+
+        // Swap in buckets from disk:
+        if self.onload_from_disk(bucket_id) {
+            return true;
+        }
+
+        // The bucket is completely empty, disable it:
+        self.disabled.remove(bucket_id);
+        false
     }
 
     fn disable(&mut self, bucket_id: &BucketID) -> bool {
@@ -103,14 +124,6 @@ impl Frontier {
             Self::swap(&mut self.enabled_queue, &mut self.disabled_queue, bucket_id).is_some()
         } else {
             false
-        }
-    }
-
-    fn queue_for(&mut self, bucket_id: &BucketID) -> &mut PriorityQueue {
-        if self.disabled.contains(bucket_id) {
-            &mut self.disabled_queue
-        } else {
-            &mut self.enabled_queue
         }
     }
 
@@ -126,6 +139,85 @@ impl Frontier {
         to.bucket(bucket_id.0).replace(bucket_id.1, contents);
 
         Some(())
+    }
+
+    fn queue_for(&mut self, bucket_id: &BucketID) -> &mut PriorityQueue {
+        if self.disabled.contains(bucket_id) {
+            &mut self.disabled_queue
+        } else {
+            &mut self.enabled_queue
+        }
+    }
+
+    fn onload_from_disk(&mut self, bucket_id: &BucketID) -> bool {
+        let bucket = match self.disk.read(bucket_id.0, bucket_id.1) {
+            None => return false,
+            Some(bucket) => bucket,
+        };
+
+        if Self::bucket_len(&self.enabled_queue, bucket_id) > 0 {
+            panic!("about to overwrite data");
+        }
+
+        self.enabled_queue
+            .bucket(bucket_id.0)
+            .replace(bucket_id.1, Some(bucket));
+
+        true
+    }
+
+    fn offload_buckets_to_disk(&mut self) {
+        if self.len() < 50_000_000 { // TODO: configure
+            return;
+        }
+
+        println!("running low on memory, offloading to disk");
+        let queue = &mut self.disabled_queue;
+
+        let waste_min = queue.min_priority().unwrap();
+        let waste_max = queue.max_priority().unwrap();
+
+        let mut jobs = vec![];
+
+        for w in waste_min..=waste_max {
+            let mut waste_bucket = self.disabled_queue.bucket(w);
+
+            let perm_min = match waste_bucket.min_priority() {
+                None => continue,
+                Some(p) => p,
+            };
+
+            let perm_max = waste_bucket.max_priority().unwrap();
+
+            print!("  {:02}, {:03}..{:03} | ", w, perm_min, perm_max);
+            for p in perm_min..=perm_max {
+                let bucket = match waste_bucket.replace(p, None) {
+                    None => continue,
+                    Some(b) => b,
+                };
+
+                print!("{} ", bucket.len());
+                jobs.push((bucket, w, p));
+            }
+
+            println!();
+        }
+
+        jobs.into_par_iter().for_each(|job| {
+            self.disk.write(&job.0, job.1, job.2);
+        });
+
+        println!("done, continuing with search");
+    }
+
+    fn bucket_len(queue: &PriorityQueue, bucket_id: &BucketID) -> usize {
+        match queue.bucket_for_peeking(bucket_id.0) {
+            None => 0,
+            Some(b) => match b.bucket_for_peeking(bucket_id.1) {
+                None => 0,
+                Some(b) => b.len(),
+            },
+        }
     }
 }
 

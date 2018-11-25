@@ -89,7 +89,7 @@ mod prune {
             subject.add(c, N);
         }
 
-        assert_eq!(subject.len(), 4);
+        assert_eq!(subject.enabled_queue.len(), 4);
 
         // Current state of Frontier:
         // 012340: 0 waste, 2 permutations
@@ -98,16 +98,16 @@ mod prune {
         // 012343: 3 waste, 1 permutation
 
         subject.prune(2, 0, F); // does nothing (above threshold)
-        assert_eq!(subject.len(), 4);
+        assert_eq!(subject.enabled_queue.len(), 4);
 
         subject.prune(2, 1, F); // does nothing (equal to threshold)
-        assert_eq!(subject.len(), 4);
+        assert_eq!(subject.enabled_queue.len(), 4);
 
         subject.prune(2, 2, F); // prunes 012342
-        assert_eq!(subject.len(), 3);
+        assert_eq!(subject.enabled_queue.len(), 3);
 
         subject.prune(2, 3, F); // does nothing (already pruned)
-        assert_eq!(subject.len(), 3);
+        assert_eq!(subject.enabled_queue.len(), 3);
 
         // Check the right candidate was pruned:
         assert_eq!(subject.next().unwrap().tail_of_string, &[2, 3, 4, 0]);
@@ -128,7 +128,7 @@ mod prune {
                 subject.add(c, N);
             }
 
-            assert_eq!(subject.len(), 4);
+            assert_eq!(subject.enabled_queue.len(), 4);
 
             // Current state of Frontier:
             // 012340: 0 waste, 2 permutations
@@ -137,16 +137,16 @@ mod prune {
             // 012343: 3 waste, 1 permutation
 
             subject.prune(2, 0, true); // does nothing (above threshold)
-            assert_eq!(subject.len(), 4);
+            assert_eq!(subject.enabled_queue.len(), 4);
 
             subject.prune(2, 1, true); // does nothing (equal to threshold)
-            assert_eq!(subject.len(), 4);
+            assert_eq!(subject.enabled_queue.len(), 4);
 
             subject.prune(2, 2, true); // prunes 012342 _and_ 012343
-            assert_eq!(subject.len(), 2);
+            assert_eq!(subject.enabled_queue.len(), 2);
 
             subject.prune(2, 3, true); // does nothing (already pruned)
-            assert_eq!(subject.len(), 2);
+            assert_eq!(subject.enabled_queue.len(), 2);
 
             // Check the right candidate was pruned:
             assert_eq!(subject.next().unwrap().tail_of_string, &[2, 3, 4, 0]);
@@ -175,7 +175,7 @@ mod unprune {
         add_pruned_candidate(&mut subject, 2, 10);
         add_pruned_candidate(&mut subject, 2, 11);
 
-        assert_eq!(subject.len(), 0);
+        assert_eq!(subject.enabled_queue.len(), 0);
 
         // The bounds we're exploring for waste 3 are 16..=18:
         let lower_bounds = vec![4, 8, 12, 16];
@@ -194,23 +194,20 @@ mod unprune {
         // We should unprune waste 1 candidates with permutations between 5..=6
 
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
-        assert_eq!(subject.len(), 1);
-        assert_eq!(is_pruned(&subject, 2, 10), false);
+        assert_eq!(last_unpruned(&mut subject), (2, 10));
 
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
-        assert_eq!(subject.len(), 2);
-        assert_eq!(is_pruned(&subject, 1, 6), false);
+        assert_eq!(last_unpruned(&mut subject), (1, 6));
 
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
-        assert_eq!(subject.len(), 3);
-        assert_eq!(is_pruned(&subject, 2, 9), false);
+        assert_eq!(last_unpruned(&mut subject), (2, 9));
 
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
-        assert_eq!(subject.len(), 4);
-        assert_eq!(is_pruned(&subject, 1, 5), false);
+        assert_eq!(last_unpruned(&mut subject), (1, 5));
 
+        // Nothing left to unprune:
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
-        assert_eq!(subject.len(), 4);
+        assert_eq!(subject.enabled_queue.len(), 0);
     }
 
     #[test]
@@ -261,8 +258,11 @@ mod unprune {
         frontier.disable(&(wasted_symbols, permutations));
     }
 
-    fn is_pruned(frontier: &Frontier, wasted_symbols: usize, permutations: usize) -> bool {
-        frontier.disabled.contains(&(wasted_symbols, permutations))
+    fn last_unpruned(subject: &mut Subject) -> (usize, usize) {
+        let candidate = subject.next().unwrap();
+        assert_eq!(subject.enabled_queue.is_empty(), true);
+
+        (candidate.wasted_symbols, candidate.number_of_permutations())
     }
 }
 

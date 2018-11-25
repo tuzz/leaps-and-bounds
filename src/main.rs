@@ -1,5 +1,6 @@
 extern crate bit_set;
 extern crate bucket_queue;
+extern crate rayon;
 
 #[macro_use]
 extern crate serde_derive;
