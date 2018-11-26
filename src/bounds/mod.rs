@@ -23,7 +23,7 @@ impl Bounds {
     pub fn update(&mut self, index: usize, bound: usize) -> bool {
         if self.lower_bounds.len() <= index {
             self.add_new_index(index, bound);
-            println!("{} wasted characters: at most {} permutations", index - 1, bound);
+            println!("{} wasted symbols: at most {} permutations", index - 1, bound);
             return true;
         }
 

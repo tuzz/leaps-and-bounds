@@ -15,15 +15,19 @@ pub struct Frontier {
     disabled_queue: PriorityQueue,
     disabled: HashSet<BucketID>,
     disk: Disk,
+    queue_limit: usize,
+    verbose: bool,
 }
 
 impl Frontier {
-    pub fn new() -> Self {
+    pub fn new(memory_limit: f64, gzip: bool, verbose: bool, n: usize) -> Self {
         Frontier {
             enabled_queue: PriorityQueue::new(),
             disabled_queue: PriorityQueue::new(),
             disabled: HashSet::new(),
-            disk: Disk::new("queue".to_string(), false), // TODO: configure
+            disk: Disk::new("scratch-files".to_string(), gzip),
+            queue_limit: Self::queue_limit(memory_limit, n),
+            verbose,
         }
     }
 
@@ -77,7 +81,6 @@ impl Frontier {
                 let remainder = p.saturating_sub(max_permutations);
 
                 if self.enable(&(w, remainder)) {
-                    println!("  unpruning {:02}, {:03} ... queue: {}", w, remainder, self.len());
                     return w;
                 }
             }
@@ -103,19 +106,25 @@ impl Frontier {
             return false;
         }
 
-        // Swap in buckets from memory:
-        if Self::bucket_len(&self.disabled_queue, bucket_id) > 0 {
-            Self::swap(&mut self.disabled_queue, &mut self.enabled_queue, bucket_id);
-            return true;
-        }
-
-        // Swap in buckets from disk:
         if self.onload_from_disk(bucket_id) {
+            if self.verbose {
+                println!("  unpruning {:?} from disk ..... queue: {}", bucket_id, self.len());
+            }
+
             return true;
         }
 
-        // The bucket is completely empty, disable it:
-        self.disabled.remove(bucket_id);
+        if self.disabled.remove(bucket_id) {
+            if Self::bucket_len(&self.disabled_queue, bucket_id) > 0 {
+                if self.verbose {
+                    println!("  unpruning {:?} from memory ... queue: {}", bucket_id, self.len());
+                }
+
+                Self::swap(&mut self.disabled_queue, &mut self.enabled_queue, bucket_id);
+                return true;
+            }
+        }
+
         false
     }
 
@@ -167,11 +176,11 @@ impl Frontier {
     }
 
     fn offload_buckets_to_disk(&mut self) {
-        if self.len() < 50_000_000 { // TODO: configure
+        if self.len() <= self.queue_limit {
             return;
         }
 
-        println!("running low on memory, offloading to disk");
+        println!("exceeded the maximum queue size, offloading to disk");
         let queue = &mut self.disabled_queue;
 
         let waste_min = queue.min_priority().unwrap();
@@ -189,18 +198,26 @@ impl Frontier {
 
             let perm_max = waste_bucket.max_priority().unwrap();
 
-            print!("  {:02}, {:03}..{:03} | ", w, perm_min, perm_max);
+            if self.verbose {
+                print!("  {:02}, {:03}..{:03} | ", w, perm_min, perm_max);
+            }
+
             for p in perm_min..=perm_max {
                 let bucket = match waste_bucket.replace(p, None) {
                     None => continue,
                     Some(b) => b,
                 };
 
-                print!("{} ", bucket.len());
+                if self.verbose {
+                    print!("{} ", bucket.len());
+                }
+
                 jobs.push((bucket, w, p));
             }
 
-            println!();
+            if self.verbose {
+                println!();
+            }
         }
 
         jobs.into_par_iter().for_each(|job| {
@@ -218,6 +235,29 @@ impl Frontier {
                 Some(b) => b.len(),
             },
         }
+    }
+
+    fn queue_limit(memory_limit: f64, n: usize) -> usize {
+        let bytes = Self::memory_per_candidate(n);
+        let gigabytes = memory_limit * 1024. * 1024. * 1024.;
+
+        let limit = (gigabytes / bytes as f64).floor() as usize;
+        println!("The queue limit has been set to {}GiB / {}B = {} candidates.\n", memory_limit, bytes, limit);
+
+        limit
+    }
+
+    fn memory_per_candidate(n: usize) -> usize {
+        let factorial = super::Bounds::factorial(n);
+
+        let bitset_bytes = (factorial + 7) / 8;
+        let tail_bytes = (n - 1) * 8;
+        let waste_bytes = 8;
+
+        let bytes = bitset_bytes + tail_bytes + waste_bytes;
+        println!("\nEach candidate string consumes approximately {} bytes of memory.", bytes);
+
+        bytes
     }
 }
 

@@ -12,25 +12,25 @@ mod bounds;
 mod candidate;
 mod disk;
 mod frontier;
+mod ui;
 
 use self::bounds::Bounds;
 use self::candidate::Candidate;
 use self::frontier::Frontier;
+use self::ui::UI;
 
 use std::process::exit;
-use std::io::{prelude::*, stdin, stdout};
 
 fn main() {
-    print!("This tool will try to find the length of the shortest ");
-    print!("superpermutation on n symbols. Please enter n: ");
-    stdout().flush().ok().expect("Failed to flush stdout");
-
-    let mut input = String::new();
-    stdin().read_line(&mut input).expect("Failed to read input.");
-    let n: usize = input.trim().parse().expect("Failed to parse integer.");
+    UI::print_introduction();
+    let n = UI::ask_for_n();
+    let memory = UI::ask_for_memory();
+    let gzip = UI::ask_for_gzip();
+    let verbose = UI::ask_for_verbose();
+    UI::print_running();
 
     let candidate = Candidate::seed(n);
-    let mut frontier = Frontier::new();
+    let mut frontier = Frontier::new(memory, gzip, verbose, n);
     let mut bounds = Bounds::new(n);
 
     frontier.add(candidate, n);
@@ -56,14 +56,17 @@ fn main() {
         }
 
         if bounds.found_for_superpermutation() {
-            let factorial = Bounds::factorial(n);
             let waste = bounds.lower_bounds.len() - 1;
-            let length = factorial + waste + n - 1;
+            let factorial = Bounds::factorial(n);
+            let length = n - 1 + factorial + waste;
 
-            println!("{} wasted characters: at most {} permutations", waste, factorial);
-            println!("\n-----\nDONE!\n-----\n");
-            print!("Minimal superpermutations on {} symbols have {} ", n, waste);
-            println!("wasted characters and a length of {}.", length);
+            println!("{} wasted symbols: at most {} permutations", waste, factorial);
+            println!();
+            println!("--->>> Done!");
+            println!();
+            println!("A maximum of {} wasted symbols can fit all {}! = {} permutations.", waste, n, factorial);
+            println!("The shortest superpermutation contains {} + {} + {} = {} symbols.", n - 1, factorial, waste, length);
+            println!();
 
             exit(0);
         }

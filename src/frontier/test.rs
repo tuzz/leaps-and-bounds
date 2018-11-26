@@ -7,12 +7,16 @@ type Subject = Frontier;
 const N: usize = 5;
 const F: bool = false;
 
+fn subject() -> Subject {
+    Subject::new(1.0, true, true, N)
+}
+
 mod new {
     use super::*;
 
     #[test]
     fn it_builds_a_new_frontier() {
-        let subject = Subject::new();
+        let subject = subject();
 
         assert_eq!(subject.enabled_queue.len(), 0);
         assert_eq!(subject.disabled_queue.len(), 0);
@@ -25,7 +29,7 @@ mod add {
 
     #[test]
     fn it_adds_a_candidate_to_the_frontier() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
         let candidate = Candidate::seed(N);
 
         subject.add(candidate, N);
@@ -40,7 +44,7 @@ mod add {
 
     #[test]
     fn it_queues_the_candidate_based_on_total_waste_and_number_of_permutations() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
 
         let seed = Candidate::seed(N);
         let candidate = seed.expand(MAX, N).last().unwrap();
@@ -60,7 +64,7 @@ mod add {
 
         #[test]
         fn it_adds_the_candidate_to_the_disabled_queue() {
-            let mut subject = Subject::new();
+            let mut subject = subject();
             let seed = Candidate::seed(N);
 
             let candidate = seed.expand(MAX, N).last().unwrap();
@@ -82,7 +86,7 @@ mod prune {
 
     #[test]
     fn it_removes_candidates_with_the_given_waste_that_do_not_meet_the_threshold() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
         let candidate = Candidate::seed(N);
 
         for c in candidate.expand(MAX, N) {
@@ -121,7 +125,7 @@ mod prune {
 
         #[test]
         fn it_also_prunes_candidates_that_have_more_wasted_symbols() {
-            let mut subject = Subject::new();
+            let mut subject = subject();
             let candidate = Candidate::seed(N);
 
             for c in candidate.expand(MAX, N) {
@@ -161,7 +165,7 @@ mod unprune {
 
     #[test]
     fn it_unprunes_buckets_based_on_the_bounds_for_the_current_wasted_symbols() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
 
         add_pruned_candidate(&mut subject, 1, 3);
         add_pruned_candidate(&mut subject, 1, 4);
@@ -212,7 +216,7 @@ mod unprune {
 
     #[test]
     fn it_returns_the_number_of_wasted_symbols_for_the_bucket_that_was_unpruned() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
 
         add_pruned_candidate(&mut subject, 1, 6);
         add_pruned_candidate(&mut subject, 2, 10);
@@ -226,7 +230,7 @@ mod unprune {
 
     #[test]
     fn it_returns_the_original_wasted_symbols_once_all_buckets_have_been_unpruned() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
 
         add_pruned_candidate(&mut subject, 1, 6);
         add_pruned_candidate(&mut subject, 2, 10);
@@ -271,7 +275,7 @@ mod next {
 
     #[test]
     fn it_returns_the_candidates_ordered_by_waste_asc_then_number_of_permutations_desc() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
         let candidate = Candidate::seed(N);
 
         for c in candidate.expand(MAX, N) {
@@ -299,7 +303,7 @@ mod next {
 
     #[test]
     fn it_does_not_return_candidates_from_the_disabled_queue() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
         let candidate = Candidate::seed(N);
 
         for c in candidate.expand(MAX, N) {
@@ -328,7 +332,7 @@ mod min_waste {
 
     #[test]
     fn it_returns_the_minimum_number_of_wasted_symbols_for_candidates_in_the_frontier() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
         let candidate = Candidate::seed(N);
 
         for c in candidate.expand(MAX, N) {
@@ -350,7 +354,7 @@ mod max_waste {
 
     #[test]
     fn it_returns_the_maximum_number_of_wasted_symbols_for_candidates_in_the_frontier() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
         let candidate = Candidate::seed(N);
 
         for c in candidate.expand(MAX, N) {
@@ -366,7 +370,7 @@ mod enable_and_disable {
 
     #[test]
     fn it_adds_or_removes_the_bucket_id_from_the_disabled_hash_set() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
         let bucket_id = (2, 3);
 
         subject.disable(&bucket_id);
@@ -378,7 +382,7 @@ mod enable_and_disable {
 
     #[test]
     fn it_moves_the_bucket_between_the_enabled_and_disabled_queues() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
 
         let seed = Candidate::seed(N);
         let candidate = seed.expand(MAX, N).last().unwrap();
@@ -406,7 +410,7 @@ mod enable_and_disable {
 
     #[test]
     fn it_returns_true_if_the_bucket_that_was_moved_contained_something() {
-        let mut subject = Subject::new();
+        let mut subject = subject();
 
         let seed = Candidate::seed(N);
         let candidate = seed.expand(MAX, N).last().unwrap();
