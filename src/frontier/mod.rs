@@ -70,17 +70,17 @@ impl Frontier {
         }
 
         let previous_waste = wasted_symbols - 1;
-
         let lower_bound = lower_bounds[previous_waste];
-        let upper_bound = upper_bounds[previous_waste];
 
-        for p in ((lower_bound + 1)..=upper_bound).rev() {
-            for w in (0..=previous_waste).rev() {
-                let allowed_waste = previous_waste - w;
-                let max_permutations = upper_bounds[allowed_waste];
-                let remainder = p.saturating_sub(max_permutations);
+        for w in (1..previous_waste).rev() {
+            let allowed_waste = previous_waste - w;
+            let max_permutations = upper_bounds[allowed_waste];
 
-                if self.enable(&(w, remainder)) {
+            let min = lower_bound + 1 - max_permutations;
+            let max = upper_bounds[w];
+
+            for p in (min..max).rev() {
+                if self.enable(&(w, p)) {
                     return w;
                 }
             }

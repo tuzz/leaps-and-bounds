@@ -167,49 +167,53 @@ mod unprune {
     fn it_unprunes_buckets_based_on_the_bounds_for_the_current_wasted_symbols() {
         let mut subject = subject();
 
+        add_pruned_candidate(&mut subject, 1, 2);
         add_pruned_candidate(&mut subject, 1, 3);
         add_pruned_candidate(&mut subject, 1, 4);
         add_pruned_candidate(&mut subject, 1, 5);
-        add_pruned_candidate(&mut subject, 1, 6);
-        add_pruned_candidate(&mut subject, 1, 7);
 
+        add_pruned_candidate(&mut subject, 2, 6);
         add_pruned_candidate(&mut subject, 2, 7);
         add_pruned_candidate(&mut subject, 2, 8);
         add_pruned_candidate(&mut subject, 2, 9);
-        add_pruned_candidate(&mut subject, 2, 10);
-        add_pruned_candidate(&mut subject, 2, 11);
 
         assert_eq!(subject.enabled_queue.len(), 0);
 
-        // The bounds we're exploring for waste 3 are 16..=18:
-        let lower_bounds = vec![4, 8, 12, 16];
-        let upper_bounds = vec![4, 8, 12, 18];
+        // The bounds we're exploring for waste 3 are 14..=16:
+        let lower_bounds = vec![4, 8, 12, 14];
+        let upper_bounds = vec![4, 8, 12, 16];
 
         // We've just moved on to the next number of wasted symbols:
         let previous_waste = 3;
         let wasted_symbols = previous_waste + 1;
 
+
         // Waste 2 is allowed 1 more wasted symbol which can add 8 permutations.
-        // To improve on the lower bound of 16, we'd need to see 9 permutations.
-        // We should unprune waste 2 candidates with permutations between 9..=10
-
-        // Waste 1 is allowed 2 more wasted symbols which can add 12 permutations.
-        // To improve on the lower bound of 16, we'd need to see 5 permutations.
-        // We should unprune waste 1 candidates with permutations between 5..=6
-
-        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
-        assert_eq!(last_unpruned(&mut subject), (2, 10));
-
-        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
-        assert_eq!(last_unpruned(&mut subject), (1, 6));
+        // To improve on the lower bound of 14, we'd need to see 7 permutations.
 
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
         assert_eq!(last_unpruned(&mut subject), (2, 9));
 
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(last_unpruned(&mut subject), (2, 8));
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(last_unpruned(&mut subject), (2, 7));
+
+        // Waste 1 is allowed 2 more wasted symbols which can add 12 permutations.
+        // To improve on the lower bound of 14, we'd need to see 3 permutations.
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
         assert_eq!(last_unpruned(&mut subject), (1, 5));
 
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(last_unpruned(&mut subject), (1, 4));
+
+        subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
+        assert_eq!(last_unpruned(&mut subject), (1, 3));
+
         // Nothing left to unprune:
+
         subject.unprune(wasted_symbols, &lower_bounds, &upper_bounds);
         assert_eq!(subject.enabled_queue.len(), 0);
     }
