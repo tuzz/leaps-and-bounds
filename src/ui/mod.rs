@@ -99,7 +99,7 @@ impl UI {
         println!("|\n| {} (default: {})", question, default);
 
         print!(">>> ");
-        stdout().flush().ok().expect("Failed to flush stdout.");
+        Self::flush();
 
         let mut input = String::new();
 
@@ -111,6 +111,10 @@ impl UI {
             true => default.to_string(),
             false => input,
         }
+    }
+
+    pub fn flush() {
+        stdout().flush().ok().expect("Failed to flush stdout.");
     }
 
     fn parse_integer(input: &str) -> usize {

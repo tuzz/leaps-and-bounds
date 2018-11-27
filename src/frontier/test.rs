@@ -249,7 +249,7 @@ mod unprune {
         assert_eq!(subject.unprune(4, &lower_bounds, &upper_bounds), 4);
     }
 
-    fn add_pruned_candidate(frontier: &mut Frontier, wasted_symbols: usize, permutations: usize) {
+    fn add_pruned_candidate(frontier: &mut Frontier, wasted_symbols: u16, permutations: usize) {
         let mut permutations_seen = BitSet::new();
 
         for i in 0..permutations {
@@ -263,14 +263,14 @@ mod unprune {
         };
 
         frontier.add(candidate, N);
-        frontier.disable(&(wasted_symbols, permutations));
+        frontier.disable(&(wasted_symbols as usize, permutations));
     }
 
     fn last_unpruned(subject: &mut Subject) -> (usize, usize) {
         let candidate = subject.next().unwrap();
         assert_eq!(subject.enabled_queue.is_empty(), true);
 
-        (candidate.wasted_symbols, candidate.number_of_permutations())
+        (candidate.wasted_symbols as usize, candidate.number_of_permutations())
     }
 }
 

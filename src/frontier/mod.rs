@@ -1,5 +1,6 @@
 use super::candidate::Candidate;
 use super::disk::Disk;
+use super::ui::UI;
 
 use ::bucket_queue::*;
 
@@ -180,7 +181,10 @@ impl Frontier {
             return;
         }
 
-        println!("exceeded the maximum queue size, offloading to disk");
+        print!("running low on memory, offloading to disk... ");
+        UI::flush();
+        if self.verbose { println!(); }
+
         let queue = &mut self.disabled_queue;
 
         let waste_min = queue.min_priority().unwrap();
@@ -224,7 +228,7 @@ impl Frontier {
             self.disk.write(&job.0, job.1, job.2);
         });
 
-        println!("done, continuing with search");
+        println!("done");
     }
 
     fn bucket_len(queue: &PriorityQueue, bucket_id: &BucketID) -> usize {

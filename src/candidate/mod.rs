@@ -8,8 +8,8 @@ use std::iter::once;
 pub struct Candidate {
     #[serde(serialize_with="serialize::serialize", deserialize_with="serialize::deserialize")]
     pub permutations_seen: BitSet,
-    pub tail_of_string: Vec<usize>,
-    pub wasted_symbols: usize,
+    pub tail_of_string: Vec<u8>,
+    pub wasted_symbols: u16,
 }
 
 impl Candidate {
@@ -21,7 +21,7 @@ impl Candidate {
 
         Candidate {
             permutations_seen: seen,
-            tail_of_string: (1..n).collect(),
+            tail_of_string: (1..n as u8).collect(),
             wasted_symbols: 0,
         }
     }
@@ -30,7 +30,7 @@ impl Candidate {
         let last_symbol = *self.tail_of_string.last().unwrap();
         let at_upper_bound = self.number_of_permutations() == upper_bound;
 
-        (0..n)
+        (0..n as u8)
             .filter(move |&s| s != last_symbol)
             .map(move |s| self.expand_one(s, at_upper_bound, n))
     }
@@ -44,10 +44,10 @@ impl Candidate {
     }
 
     pub fn total_waste(&self, n: usize) -> usize {
-        self.wasted_symbols + self.future_waste(n)
+        self.wasted_symbols as usize + self.future_waste(n)
     }
 
-    fn expand_one(&self, symbol: usize, at_upper_bound: bool, n: usize) -> Self {
+    fn expand_one(&self, symbol: u8, at_upper_bound: bool, n: usize) -> Self {
         let tail_of_string = self.build_tail(symbol, n);
 
         if Self::less_than_full(&self.tail_of_string, n) {
@@ -80,15 +80,15 @@ impl Candidate {
         self.candidate_with_new_permutation(tail_of_string, id)
     }
 
-    fn candidate_with_wasted_symbol(&self, tail_of_string: Vec<usize>, penalty: usize) -> Self {
+    fn candidate_with_wasted_symbol(&self, tail_of_string: Vec<u8>, penalty: usize) -> Self {
         Candidate {
             permutations_seen: self.permutations_seen.clone(),
             tail_of_string: tail_of_string,
-            wasted_symbols: self.wasted_symbols + penalty,
+            wasted_symbols: self.wasted_symbols + penalty as u16,
         }
     }
 
-    fn candidate_with_new_permutation(&self, tail_of_string: Vec<usize>, id: usize) -> Self {
+    fn candidate_with_new_permutation(&self, tail_of_string: Vec<u8>, id: usize) -> Self {
         let mut permutations_seen = self.permutations_seen.clone();
         permutations_seen.insert(id);
 
@@ -96,26 +96,26 @@ impl Candidate {
         Candidate { permutations_seen, tail_of_string, wasted_symbols }
     }
 
-    fn less_than_full(tail_of_string: &[usize], n: usize) -> bool {
+    fn less_than_full(tail_of_string: &[u8], n: usize) -> bool {
         tail_of_string.len() < n - 1
     }
 
-    fn tail_starts_with(&self, symbol: usize) -> bool {
+    fn tail_starts_with(&self, symbol: u8) -> bool {
         symbol == *self.tail_of_string.first().unwrap()
     }
 
     // TODO: update Lehmer crate to accept a slice or iterator of usize
-    fn permutation_id(tail_of_string: &[usize], symbol: usize) -> usize {
+    fn permutation_id(tail_of_string: &[u8], symbol: u8) -> usize {
         let permutation = tail_of_string
             .iter()
-            .map(|&e| e as u8)
-            .chain(once(symbol as u8))
+            .map(|&e| e)
+            .chain(once(symbol))
             .collect();
 
         Lehmer::from_permutation(permutation).to_decimal() as usize
     }
 
-    fn build_tail(&self, symbol: usize, n: usize) -> Vec<usize> {
+    fn build_tail(&self, symbol: u8, n: usize) -> Vec<u8> {
         let head = &self.tail_of_string;
 
         let index = match head.iter().position(|&e| e == symbol) {
@@ -129,16 +129,16 @@ impl Candidate {
         Self::append(&head[index..], symbol)
     }
 
-    fn seen_next_tail_as_well(&self, tail_of_string: &[usize], n: usize) -> bool {
+    fn seen_next_tail_as_well(&self, tail_of_string: &[u8], n: usize) -> bool {
         let mut symbols_in_tail = vec![false; n];
 
         for &symbol in tail_of_string {
-            symbols_in_tail[symbol] = true;
+            symbols_in_tail[symbol as usize] = true;
         }
 
         for (symbol, &present) in symbols_in_tail.iter().enumerate() {
             if !present {
-                let id = Self::permutation_id(tail_of_string, symbol);
+                let id = Self::permutation_id(tail_of_string, symbol as u8);
                 return self.permutations_seen.contains(id);
             }
         }
@@ -146,7 +146,7 @@ impl Candidate {
         false
     }
 
-    fn append(slice: &[usize], symbol: usize) -> Vec<usize> {
+    fn append(slice: &[u8], symbol: u8) -> Vec<u8> {
         slice.iter().map(|&e| e).chain(once(symbol)).collect()
     }
 }
