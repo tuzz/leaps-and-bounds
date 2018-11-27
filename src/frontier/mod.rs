@@ -225,7 +225,7 @@ impl Frontier {
         }
 
         jobs.into_par_iter().for_each(|job| {
-            self.disk.write(&job.0, job.1, job.2);
+            self.disk.write_chunks(job.0, job.1, job.2);
         });
 
         println!("done");

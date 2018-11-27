@@ -8,6 +8,8 @@ use std::sync::{Arc, Mutex};
 use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use bincode::{serialize_into, deserialize_from};
 
+const SPLIT_SIZE: usize = 222_222;
+
 pub struct Disk {
     path: String,
     gzip: bool,
@@ -41,7 +43,7 @@ impl Disk {
         Some(candidates)
     }
 
-    pub fn write(&self, bucket: &VecDeque<Candidate>, wasted_symbols: usize, permutations: usize) {
+    pub fn write(&self, bucket: VecDeque<Candidate>, wasted_symbols: usize, permutations: usize) {
         let filename = self.filename_for_writing(wasted_symbols, permutations);
         let file = File::create(&filename).expect(&format!("Failed to create {}", filename));
 
@@ -53,6 +55,17 @@ impl Disk {
         } else {
             serialize_into(&mut writer, &bucket).unwrap();
         }
+    }
+
+    pub fn write_chunks(&self, mut bucket: VecDeque<Candidate>, wasted_symbols: usize, permutations: usize) {
+        while bucket.len() > SPLIT_SIZE * 2 {
+            let remainder = bucket.split_off(SPLIT_SIZE);
+
+            self.write(bucket, wasted_symbols, permutations);
+            bucket = remainder
+        }
+
+        self.write(bucket, wasted_symbols, permutations);
     }
 
     pub fn filename_for_reading(&self, wasted_symbols: usize, permutations: usize) -> Option<String> {

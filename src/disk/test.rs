@@ -12,6 +12,10 @@ fn subject(test_id: &'static str, gzip: bool) -> Subject {
     Subject::new(path, gzip)
 }
 
+fn bucket() -> VecDeque<Candidate> {
+    (0..1000).map(|_| Candidate::seed(5)).collect()
+}
+
 mod new {
     use super::*;
 
@@ -56,14 +60,11 @@ mod filename_for_reading {
 
     #[test]
     fn it_returns_the_name_of_the_first_available_file() {
-        let candidate = Candidate::seed(5);
-        let bucket = VecDeque::from(vec![candidate]);
-
         let subject = subject("test-5", false);
 
-        subject.write(&bucket, 3, 4); // 0
-        subject.write(&bucket, 3, 4); // 1
-        subject.write(&bucket, 3, 4); // 2
+        subject.write(bucket(), 3, 4); // 0
+        subject.write(bucket(), 3, 4); // 1
+        subject.write(bucket(), 3, 4); // 2
 
         let filename = subject.filename_for_reading(3, 4).unwrap();
         assert_eq!(&filename[70..], "-4-permutations.dat.0");
@@ -106,11 +107,8 @@ mod write {
 
     #[test]
     fn it_writes_the_bucket_to_a_file() {
-        let candidate = Candidate::seed(5);
-        let bucket = VecDeque::from(vec![candidate]);
-
         let subject = subject("test-8", false);
-        subject.write(&bucket, 3, 4);
+        subject.write(bucket(), 3, 4);
 
         let filename = subject.filename_for_reading(3, 4).unwrap();
         assert_eq!(Path::new(&filename).exists(), true);
@@ -122,14 +120,11 @@ mod read {
 
     #[test]
     fn it_reads_the_bucket_from_a_file() {
-        let candidate = Candidate::seed(5);
-        let bucket = VecDeque::from(vec![candidate]);
-
         let subject = subject("test-9", false);
-        subject.write(&bucket, 3, 4);
+        subject.write(bucket(), 3, 4);
 
         let bucket_from_file = subject.read(3, 4);
-        assert_eq!(bucket_from_file, Some(bucket));
+        assert_eq!(bucket_from_file, Some(bucket()));
     }
 }
 
@@ -138,14 +133,11 @@ mod gzip_compression {
 
     #[test]
     fn it_writes_a_smaller_file_to_disk() {
-        let bucket: VecDeque<_> = (0..1000)
-            .map(|_| Candidate::seed(5)).collect();
-
         let with_gzip = subject("test-11", true);
         let without_gzip = subject("test-12", false);
 
-        with_gzip.write(&bucket, 3, 4);
-        without_gzip.write(&bucket, 5, 6);
+        with_gzip.write(bucket(), 3, 4);
+        without_gzip.write(bucket(), 5, 6);
 
         let file1 = with_gzip.filename_for_reading(3, 4).unwrap();
         let file2 = without_gzip.filename_for_reading(5, 6).unwrap();
